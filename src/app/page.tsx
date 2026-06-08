@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { getEvents } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
+import EventCalendar from '@/components/EventCalendar'
 
 export const revalidate = 60
 
 export default async function Home() {
   const allEvents = await getEvents()
-  const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 6)
+  const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
 
   return (
     <div>
@@ -36,12 +37,23 @@ export default async function Home() {
         {upcoming.length === 0 ? (
           <p className="text-warm-400 text-center py-12">目前沒有開放報名的活動，請稍後再來。</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {upcoming.map(event => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
         )}
+      </section>
+
+      {/* Calendar */}
+      <section className="max-w-5xl mx-auto px-6 pb-16">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-warm-800">活動月曆</h2>
+          <Link href="/events" className="text-sm text-warm-500 hover:text-warm-700 transition-colors">
+            查看全部 →
+          </Link>
+        </div>
+        <EventCalendar events={allEvents} />
       </section>
 
       {/* About strip */}
