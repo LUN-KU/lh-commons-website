@@ -1,7 +1,12 @@
+import Image from 'next/image'
+
 export default function Footer() {
   return (
     <footer className="bg-warm-800 text-warm-100 py-10 mt-16">
       <div className="max-w-5xl mx-auto px-6 text-center">
+        <div className="flex justify-center mb-3">
+          <Image src="/logo.png" alt="領航里" width={48} height={48} className="rounded-full opacity-90" />
+        </div>
         <p className="text-lg font-bold mb-1">領航里</p>
         <p className="text-sm text-warm-300 mb-4">深度交流 × 有效社交 × 打造理想生活圈</p>
         <div className="flex justify-center gap-6 text-sm text-warm-300">
