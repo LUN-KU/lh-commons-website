@@ -4,26 +4,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        cream: '#FDF6EC',
-        warm: {
-          50: '#FDF6EC',
-          100: '#FAE8CC',
-          200: '#F5CFA0',
-          300: '#EFB574',
-          400: '#E89A4A',
-          500: '#D97B2A',
-          600: '#B8621F',
-          700: '#8F4A18',
-          800: '#673512',
-          900: '#3F200B',
+        brand: {
+          50:  '#EEF2FF',
+          100: '#DBE4FF',
+          200: '#BAC8FF',
+          300: '#91A7FF',
+          400: '#5C7CFA',
+          500: '#3B5BDB',
+          600: '#2756B8',
+          700: '#1B3472',
+          800: '#132554',
+          900: '#0D1A3A',
         },
-        forest: {
-          500: '#4A6741',
-          600: '#3A5232',
-        }
+        lavender: '#EAE8F8',
+        pearl: '#F5F7FF',
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'Noto Sans TC', 'sans-serif'],
+        sans: ['Noto Sans TC', 'sans-serif'],
+      },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, #F0EBFF 0%, #E8EEFF 50%, #EBF4FF 100%)',
       }
     },
   },

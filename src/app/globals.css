@@ -2,9 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background-color: #FDF6EC;
+  background: linear-gradient(135deg, #F0EBFF 0%, #E8EEFF 50%, #EBF4FF 100%);
+  background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
+  color: #1B3472;
 }

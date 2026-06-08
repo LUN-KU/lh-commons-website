@@ -56,18 +56,18 @@ export default function EventCalendar({ events }: { events: Event[] }) {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-warm-100 shadow-sm p-6">
+    <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-brand-100 shadow-sm p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-warm-100 text-warm-600 transition-colors">‹</button>
-        <h3 className="font-bold text-warm-800 text-lg">{year} 年 {month + 1} 月</h3>
-        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-warm-100 text-warm-600 transition-colors">›</button>
+        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-brand-100 text-brand-600 transition-colors">‹</button>
+        <h3 className="font-bold text-brand-800 text-lg">{year} 年 {month + 1} 月</h3>
+        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-brand-100 text-brand-600 transition-colors">›</button>
       </div>
 
       {/* Weekday labels */}
       <div className="grid grid-cols-7 mb-2">
         {WEEKDAYS.map(d => (
-          <div key={d} className="text-center text-xs text-warm-400 font-medium py-1">{d}</div>
+          <div key={d} className="text-center text-xs text-brand-400 font-medium py-1">{d}</div>
         ))}
       </div>
 
@@ -85,14 +85,14 @@ export default function EventCalendar({ events }: { events: Event[] }) {
               key={day}
               onClick={() => setSelectedDay(isSelected ? null : day)}
               className={`flex flex-col items-center py-1.5 rounded-xl transition-colors
-                ${isSelected ? 'bg-warm-600 text-white' : isToday ? 'bg-warm-100 text-warm-800' : 'hover:bg-warm-50 text-warm-700'}
+                ${isSelected ? 'bg-brand-700 text-white' : isToday ? 'bg-brand-100 text-brand-800' : 'hover:bg-brand-50 text-brand-700'}
               `}
             >
               <span className="text-sm font-medium">{day}</span>
               {hasEvents && (
                 <div className="flex gap-0.5 mt-0.5">
                   {eventsByDay[day].slice(0, 3).map((e, idx) => (
-                    <span key={idx} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-warm-200' : (statusDot[e.status] ?? 'bg-warm-300')}`} />
+                    <span key={idx} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-brand-200' : (statusDot[e.status] ?? 'bg-brand-300')}`} />
                   ))}
                 </div>
               )}
@@ -102,7 +102,7 @@ export default function EventCalendar({ events }: { events: Event[] }) {
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 mt-4 pt-4 border-t border-warm-100 text-xs text-warm-400">
+      <div className="flex gap-4 mt-4 pt-4 border-t border-brand-100 text-xs text-brand-400">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />報名中</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />額滿</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />已結束</span>
@@ -110,17 +110,17 @@ export default function EventCalendar({ events }: { events: Event[] }) {
 
       {/* Selected day events */}
       {selectedDay && (
-        <div className="mt-4 pt-4 border-t border-warm-100">
-          <p className="text-sm font-bold text-warm-700 mb-3">{month + 1}/{selectedDay} 的活動</p>
+        <div className="mt-4 pt-4 border-t border-brand-100">
+          <p className="text-sm font-bold text-brand-700 mb-3">{month + 1}/{selectedDay} 的活動</p>
           {selectedEvents.length === 0 ? (
-            <p className="text-sm text-warm-400">當天無活動</p>
+            <p className="text-sm text-brand-400">當天無活動</p>
           ) : (
             <div className="space-y-2">
               {selectedEvents.map(e => (
-                <Link key={e.id} href={`/events/${e.id}`} className="flex items-center justify-between bg-warm-50 rounded-xl px-4 py-2.5 hover:bg-warm-100 transition-colors">
+                <Link key={e.id} href={`/events/${e.id}`} className="flex items-center justify-between bg-brand-50 rounded-xl px-4 py-2.5 hover:bg-brand-100 transition-colors">
                   <div>
-                    <p className="text-sm font-medium text-warm-800">{e.name}</p>
-                    {e.time && <p className="text-xs text-warm-400 mt-0.5">{e.time}{e.location ? `・${e.location}` : ''}</p>}
+                    <p className="text-sm font-medium text-brand-800">{e.name}</p>
+                    {e.time && <p className="text-xs text-brand-400 mt-0.5">{e.time}{e.location ? `・${e.location}` : ''}</p>}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ml-3 whitespace-nowrap ${
                     e.status === '報名中' ? 'bg-green-100 text-green-700' :
