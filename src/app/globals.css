@@ -5,8 +5,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background: linear-gradient(135deg, #F0EBFF 0%, #E8EEFF 50%, #EBF4FF 100%);
+  background: #FAFBFF;
+  background-image: radial-gradient(ellipse at top left, #FDE8F0 0%, transparent 50%),
+                    radial-gradient(ellipse at bottom right, #E0EEFF 0%, transparent 50%);
   background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
   color: #1B3472;
+  min-height: 100vh;
 }
