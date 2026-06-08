@@ -6,7 +6,7 @@ export default function Navbar() {
     <nav className="bg-cream border-b border-warm-100 sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="領航里" width={40} height={40} className="rounded-full" />
+          <Image src="/logo.png" alt="領航里" width={40} height={40} />
           <span className="text-xl font-bold text-warm-700 tracking-wide">領航里</span>
         </Link>
         <div className="flex gap-6 text-sm font-medium text-warm-600">
