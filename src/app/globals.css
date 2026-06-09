@@ -6,8 +6,9 @@
 
 body {
   background: #FAFBFF;
-  background-image: radial-gradient(ellipse at top left, #FDE8F0 0%, transparent 50%),
-                    radial-gradient(ellipse at bottom right, #E0EEFF 0%, transparent 50%);
+  background-image:
+    radial-gradient(ellipse 70% 60% at -10% -5%, rgba(253, 220, 235, 0.75) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 110% 105%, rgba(186, 200, 255, 0.65) 0%, transparent 55%);
   background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
   color: #1B3472;
