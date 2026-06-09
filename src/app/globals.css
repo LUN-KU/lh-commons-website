@@ -5,12 +5,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background: #1A3F7A;
+  /* 品牌藍：左上亮藍灰 → 中間中藍 → 右下暖金 */
+  background-color: #4A7EC0;
   background-image:
-    radial-gradient(ellipse 80% 60% at -5% -10%, rgba(59, 110, 200, 0.55) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 105% 110%, rgba(15, 35, 90, 0.7) 0%, transparent 55%);
+    radial-gradient(ellipse 130% 90% at 15% -15%, rgba(155, 195, 230, 0.75) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 70% at 90% 110%, rgba(170, 130, 55, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 70% at 0% 100%, rgba(25, 55, 130, 0.5) 0%, transparent 50%);
   background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
   color: #1B3472;
   min-height: 100vh;
+}
+
+/* 全頁固定顆粒紋理層 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
 }
