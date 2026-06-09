@@ -41,7 +41,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <Link href="/events" className="text-sm text-brand-400 hover:text-brand-600 mb-6 inline-block transition-colors">
+      <Link href="/events" className="text-sm text-white/50 hover:text-white mb-6 inline-block transition-colors">
         ← 回到活動列表
       </Link>
 

@@ -8,8 +8,8 @@ export default async function LinksPage() {
   return (
     <div className="max-w-xl mx-auto px-6 py-16">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-brand-700 mb-2">領航里</h1>
-        <p className="text-brand-400">所有重要連結都在這裡</p>
+        <h1 className="text-3xl font-bold text-white mb-2">領航里</h1>
+        <p className="text-white/50">所有重要連結都在這裡</p>
       </div>
 
       <div className="space-y-4">

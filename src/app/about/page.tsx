@@ -10,8 +10,8 @@ export default async function AboutPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
-      <h1 className="text-3xl font-bold text-brand-700 mb-2">關於領航里</h1>
-      <p className="text-brand-400 mb-10">深度交流 × 有效社交 × 打造理想生活圈</p>
+      <h1 className="text-3xl font-bold text-white mb-2">關於領航里</h1>
+      <p className="text-white/50 mb-10">深度交流 × 有效社交 × 打造理想生活圈</p>
 
       <div className="space-y-8 text-brand-600 leading-relaxed">
         <p className="text-lg">{s.about}</p>
