@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { getEvents } from '@/lib/notion'
+import { getEvents, getSiteSettings } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import EventCalendar from '@/components/EventCalendar'
 
 export const revalidate = 60
 
 export default async function Home() {
-  const allEvents = await getEvents()
+  const [allEvents, settings] = await Promise.all([getEvents(), getSiteSettings()])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
 
   return (
@@ -70,11 +70,11 @@ export default async function Home() {
       <section className="max-w-5xl mx-auto px-6 pb-14">
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/80 backdrop-blur-sm border border-brand-100 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-4xl font-black text-brand-700">700+</p>
+            <p className="text-4xl font-black text-brand-700">{settings.memberCount}</p>
             <p className="text-sm text-brand-400 mt-1.5">里民人數</p>
           </div>
           <div className="bg-white/80 backdrop-blur-sm border border-brand-100 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-4xl font-black text-brand-700">15+</p>
+            <p className="text-4xl font-black text-brand-700">{settings.eventsPerMonth}</p>
             <p className="text-sm text-brand-400 mt-1.5">每月活動場數</p>
           </div>
           <div className="bg-white/80 backdrop-blur-sm border border-brand-100 rounded-2xl p-6 text-center shadow-sm">
