@@ -14,12 +14,20 @@ export type Event = {
   registrationUrl: string | null
   status: string
   coverImage: string | null
+  iconImage: string | null
 }
 
 function getCover(page: any): string | null {
   if (!page.cover) return null
   if (page.cover.type === 'external') return page.cover.external.url
   if (page.cover.type === 'file') return page.cover.file.url
+  return null
+}
+
+function getIcon(page: any): string | null {
+  if (!page.icon) return null
+  if (page.icon.type === 'external') return page.icon.external.url
+  if (page.icon.type === 'file') return page.icon.file.url
   return null
 }
 
@@ -50,6 +58,7 @@ export async function getEvents(): Promise<Event[]> {
     registrationUrl: getText(page.properties['報名連結']) || null,
     status: getText(page.properties['狀態']),
     coverImage: getCover(page),
+    iconImage: getIcon(page),
   }))
 }
 
@@ -142,6 +151,7 @@ export async function getEvent(id: string): Promise<Event | null> {
       registrationUrl: getText(page.properties['報名連結']) || null,
       status: getText(page.properties['狀態']),
       coverImage: getCover(page),
+      iconImage: getIcon(page),
     }
   } catch {
     return null
