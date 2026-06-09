@@ -23,7 +23,7 @@ function formatDate(dateStr: string) {
   return `${month}/${day}（${weekday}）`
 }
 
-export default function EventCard({ event }: { event: Event }) {
+export default function EventCard({ event, compact = false }: { event: Event; compact?: boolean }) {
   const statusColor = statusColors[event.status] ?? 'bg-gray-100 text-gray-400'
   const topBar = statusTopBar[event.status] ?? 'bg-brand-200'
 
@@ -64,26 +64,28 @@ export default function EventCard({ event }: { event: Event }) {
           </h3>
 
           {/* Meta */}
-          <div className="space-y-1.5 text-sm text-brand-400 mt-4 pt-4 border-t border-brand-50">
-            {event.date && (
-              <p className="flex items-center gap-1.5">
-                <span>📅</span>
-                <span>{formatDate(event.date)}{event.time ? `　${event.time}` : ''}</span>
-              </p>
-            )}
-            {event.location && (
-              <p className="flex items-center gap-1.5">
-                <span>📍</span>
-                <span>{event.location}</span>
-              </p>
-            )}
-            {event.fee && (
-              <p className="flex items-center gap-1.5">
-                <span>💰</span>
-                <span>{event.fee}</span>
-              </p>
-            )}
-          </div>
+          {!compact && (
+            <div className="space-y-1.5 text-sm text-brand-400 mt-4 pt-4 border-t border-brand-50">
+              {event.date && (
+                <p className="flex items-center gap-1.5">
+                  <span>📅</span>
+                  <span>{formatDate(event.date)}{event.time ? `　${event.time}` : ''}</span>
+                </p>
+              )}
+              {event.location && (
+                <p className="flex items-center gap-1.5">
+                  <span>📍</span>
+                  <span>{event.location}</span>
+                </p>
+              )}
+              {event.fee && (
+                <p className="flex items-center gap-1.5">
+                  <span>💰</span>
+                  <span>{event.fee}</span>
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Link>

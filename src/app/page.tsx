@@ -100,7 +100,7 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {upcoming.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} compact />
             ))}
           </div>
         )}
