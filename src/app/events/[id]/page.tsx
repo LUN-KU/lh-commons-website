@@ -47,7 +47,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
       {/* Info card */}
       <div className="bg-white rounded-3xl shadow-sm border border-brand-50 overflow-hidden mb-6">
-        <div className={`h-1.5 w-full ${topBar}`} />
+        {event.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={event.coverImage} alt={event.name} className="w-full max-h-72 object-cover" />
+        ) : (
+          <div className={`h-1.5 w-full ${topBar}`} />
+        )}
         <div className="p-8">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm text-brand-400">{event.category}</span>

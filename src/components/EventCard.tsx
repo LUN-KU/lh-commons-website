@@ -30,8 +30,19 @@ export default function EventCard({ event }: { event: Event }) {
   return (
     <Link href={`/events/${event.id}`}>
       <div className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all border border-brand-50 h-full flex flex-col group">
-        {/* Top color bar */}
-        <div className={`h-1.5 w-full ${topBar}`} />
+
+        {/* Cover image OR color bar */}
+        {event.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={event.coverImage}
+            alt={event.name}
+            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className={`h-1.5 w-full ${topBar}`} />
+        )}
+
         <div className="p-5 flex flex-col flex-1">
           {/* Category + Status */}
           <div className="flex items-start justify-between mb-3">
