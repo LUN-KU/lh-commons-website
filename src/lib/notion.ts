@@ -107,6 +107,18 @@ export async function getSiteLinks(): Promise<SiteLink[]> {
   return links
 }
 
+export type NotionBlock = {
+  id: string
+  type: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
+}
+
+export async function getEventBlocks(pageId: string): Promise<NotionBlock[]> {
+  const res = await notion.blocks.children.list({ block_id: pageId, page_size: 100 })
+  return res.results as NotionBlock[]
+}
+
 export async function getEvent(id: string): Promise<Event | null> {
   try {
     const page: any = await notion.pages.retrieve({ page_id: id })
