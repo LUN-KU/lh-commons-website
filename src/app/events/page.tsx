@@ -19,7 +19,7 @@ export default async function EventsPage() {
           <h2 className="text-lg font-bold text-brand-700 mb-5 border-l-4 border-brand-500 pl-3">開放報名</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {active.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} compact />
             ))}
           </div>
         </section>
@@ -30,7 +30,7 @@ export default async function EventsPage() {
           <h2 className="text-lg font-bold text-brand-300 mb-5 border-l-4 border-brand-100 pl-3">已結束活動</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 opacity-60">
             {ended.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} compact />
             ))}
           </div>
         </section>
