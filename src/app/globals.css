@@ -5,10 +5,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background: #0F1E3D;
+  background: #1A3F7A;
   background-image:
-    radial-gradient(ellipse 70% 60% at -10% -5%, rgba(43, 86, 184, 0.45) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 110% 105%, rgba(27, 52, 114, 0.55) 0%, transparent 55%);
+    radial-gradient(ellipse 80% 60% at -5% -10%, rgba(59, 110, 200, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 105% 110%, rgba(15, 35, 90, 0.7) 0%, transparent 55%);
   background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
   color: #1B3472;
