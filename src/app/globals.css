@@ -5,32 +5,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background-color: #3A6FB5;
+  /* 底色：中藍偏灰（去飽和，接近品牌圖的基調） */
+  background-color: #4A78B0;
+
   background-image:
-    /* 左上：強亮藍白光暈 */
-    radial-gradient(ellipse 140% 100% at 10% -20%, rgba(190, 220, 245, 0.90) 0%, rgba(130, 175, 225, 0.5) 35%, transparent 55%),
-    /* 右下：暖金色調 */
-    radial-gradient(ellipse 110% 90% at 95% 120%, rgba(200, 155, 50, 0.65) 0%, rgba(160, 110, 40, 0.3) 40%, transparent 60%),
-    /* 左下：深藍暗角 */
-    radial-gradient(ellipse 80% 80% at -5% 105%, rgba(15, 40, 110, 0.65) 0%, transparent 50%),
-    /* 中右：補一點青藍 */
-    radial-gradient(ellipse 60% 60% at 100% 40%, rgba(80, 150, 210, 0.4) 0%, transparent 50%);
+    /* 左上角：幾乎白藍的霧感光暈 */
+    radial-gradient(ellipse 160% 110% at 20% -10%,
+      rgba(210, 228, 245, 0.92) 0%,
+      rgba(145, 185, 225, 0.55) 30%,
+      transparent 55%
+    ),
+    /* 右下角：明顯暖金/琥珀 */
+    radial-gradient(ellipse 130% 100% at 90% 115%,
+      rgba(215, 165, 40, 0.82) 0%,
+      rgba(185, 130, 40, 0.50) 35%,
+      transparent 58%
+    ),
+    /* 底部橫向暖帶，加強過渡感 */
+    radial-gradient(ellipse 140% 45% at 50% 105%,
+      rgba(195, 148, 50, 0.50) 0%,
+      transparent 55%
+    ),
+    /* 左下深藍暗角，增加立體感 */
+    radial-gradient(ellipse 75% 65% at -5% 100%,
+      rgba(20, 45, 110, 0.55) 0%,
+      transparent 50%
+    );
+
   background-attachment: fixed;
   font-family: 'Noto Sans TC', sans-serif;
   color: #1B3472;
   min-height: 100vh;
 }
 
-/* 全頁固定顆粒紋理層 */
+/* 全頁顆粒紋理（調細一點、強度提高） */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 999;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 256px 256px;
-  opacity: 0.18;
+  background-size: 200px 200px;
+  opacity: 0.22;
   mix-blend-mode: overlay;
 }
