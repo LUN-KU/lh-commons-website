@@ -1,91 +1,104 @@
 import Link from 'next/link'
 import type { Event } from '@/lib/notion'
 
-const statusColors: Record<string, string> = {
-  '報名中': 'bg-emerald-100 text-emerald-600',
-  '額滿':   'bg-orange-100 text-orange-500',
-  '已結束': 'bg-gray-100 text-gray-400',
-}
-
-const statusTopBar: Record<string, string> = {
-  '報名中': 'bg-emerald-400',
-  '額滿':   'bg-orange-400',
-  '已結束': 'bg-gray-200',
-}
-
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
   const month = d.getMonth() + 1
   const day = d.getDate()
   const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-  const weekday = weekdays[d.getDay()]
-  return `${month}/${day}（${weekday}）`
+  return `${month}/${day}（${weekdays[d.getDay()]}）`
 }
 
+const statusBadge: Record<string, string> = {
+  '報名中': 'bg-emerald-500 text-white',
+  '額滿':   'bg-orange-400 text-white',
+  '已結束': 'bg-white/60 text-gray-600',
+}
+
+// compact = 首頁小卡（方圖 + 名稱）
+// full (default) = 活動探索大卡（16:9 + 日期地點）
 export default function EventCard({ event, compact = false }: { event: Event; compact?: boolean }) {
-  const statusColor = statusColors[event.status] ?? 'bg-gray-100 text-gray-400'
-  const topBar = statusTopBar[event.status] ?? 'bg-brand-200'
+  const badge = statusBadge[event.status] ?? 'bg-white/60 text-gray-600'
+  const displayImage = event.coverImage || event.iconImage
 
-  return (
-    <Link href={`/events/${event.id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all border border-brand-50 h-full flex flex-col group">
-
-        {/* Icon image OR color bar */}
-        {event.iconImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={event.iconImage}
-            alt={event.name}
-            className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className={`h-1.5 w-full ${topBar}`} />
-        )}
-
-        <div className="p-5 flex flex-col flex-1">
-          {/* Category + Status */}
-          <div className="flex items-start justify-between mb-3">
-            {event.category ? (
-              <span className="text-xs bg-brand-50 text-brand-500 font-medium px-3 py-1 rounded-full">
-                {event.category}
-              </span>
-            ) : <span />}
+  if (compact) {
+    return (
+      <Link href={`/events/${event.id}`}>
+        <div className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all group h-full flex flex-col">
+          <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-brand-200 to-brand-500">
+            {displayImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={displayImage} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white/30 text-4xl">🎉</div>
+            )}
             {event.status && (
-              <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColor}`}>
+              <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${badge}`}>
                 {event.status}
               </span>
             )}
           </div>
+          <div className="p-3">
+            <h3 className="font-bold text-brand-900 text-sm leading-snug line-clamp-2">{event.name}</h3>
+          </div>
+        </div>
+      </Link>
+    )
+  }
 
-          {/* Title */}
-          <h3 className="font-bold text-brand-800 text-base leading-snug group-hover:text-brand-900 transition-colors mb-auto">
+  return (
+    <Link href={`/events/${event.id}`}>
+      <div className="bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group h-full flex flex-col">
+
+        {/* Image 16:9 */}
+        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-300 to-brand-600 flex-none">
+          {displayImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={displayImage}
+              alt={event.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white/20 text-5xl">🎉</div>
+          )}
+
+          {/* Category tag */}
+          {event.category && (
+            <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+              {event.category}
+            </span>
+          )}
+
+          {/* Status badge */}
+          {event.status && (
+            <span className={`absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full ${badge}`}>
+              {event.status}
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-5 flex flex-col flex-1">
+          <h3 className="font-bold text-brand-900 text-[15px] leading-snug mb-3 line-clamp-2 group-hover:text-brand-700 transition-colors">
             {event.name}
           </h3>
 
-          {/* Meta */}
-          {!compact && (
-            <div className="space-y-1.5 text-sm text-brand-400 mt-4 pt-4 border-t border-brand-50">
-              {event.date && (
-                <p className="flex items-center gap-1.5">
-                  <span>📅</span>
-                  <span>{formatDate(event.date)}{event.time ? `　${event.time}` : ''}</span>
-                </p>
-              )}
-              {event.location && (
-                <p className="flex items-center gap-1.5">
-                  <span>📍</span>
-                  <span>{event.location}</span>
-                </p>
-              )}
-              {event.fee && (
-                <p className="flex items-center gap-1.5">
-                  <span>💰</span>
-                  <span>{event.fee}</span>
-                </p>
-              )}
-            </div>
-          )}
+          <div className="space-y-1.5 text-sm text-brand-400 mt-auto">
+            {event.date && (
+              <div className="flex items-center gap-2">
+                <span className="flex-none">📅</span>
+                <span>{formatDate(event.date)}{event.time ? `　${event.time}` : ''}</span>
+              </div>
+            )}
+            {event.location && (
+              <div className="flex items-center gap-2">
+                <span className="flex-none">📍</span>
+                <span className="truncate">{event.location}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Link>
