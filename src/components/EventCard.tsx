@@ -51,8 +51,8 @@ export default function EventCard({ event, compact = false }: { event: Event; co
     <Link href={`/events/${event.id}`}>
       <div className="bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group h-full flex flex-col">
 
-        {/* Image 16:9 */}
-        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-300 to-brand-600 flex-none">
+        {/* Image 1:1 */}
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-brand-300 to-brand-600 flex-none">
           {displayImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

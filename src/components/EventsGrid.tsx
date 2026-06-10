@@ -8,9 +8,16 @@ const TABS = ['全部', '報名中', '額滿', '已結束'] as const
 export default function EventsGrid({ events }: { events: Event[] }) {
   const [active, setActive] = useState<string>('全部')
 
-  const filtered = active === '全部'
-    ? events
-    : events.filter(e => e.status === active)
+  const filtered = (() => {
+    const list = active === '全部' ? events : events.filter(e => e.status === active)
+    if (active === '全部') {
+      return [
+        ...list.filter(e => e.status !== '已結束'),
+        ...list.filter(e => e.status === '已結束'),
+      ]
+    }
+    return list
+  })()
 
   return (
     <div>
