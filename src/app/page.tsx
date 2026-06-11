@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getEvents, getSiteSettings, getActivityPhotos, getActivityFeaturedImage } from '@/lib/notion'
+import { getEvents, getSiteSettings, getActivityFeaturedImage } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
 
@@ -14,10 +14,9 @@ const SERVICES = [
 ]
 
 export default async function Home() {
-  const [allEvents, settings, carouselImages, featuredImage] = await Promise.all([
+  const [allEvents, settings, featuredImage] = await Promise.all([
     getEvents(),
     getSiteSettings(),
-    getActivityPhotos(),
     getActivityFeaturedImage(),
   ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
@@ -144,7 +143,7 @@ export default async function Home() {
 
           {/* Right: carousel */}
           <div>
-            <PhotoCarousel images={carouselImages} />
+            <PhotoCarousel />
           </div>
         </div>
       </section>
