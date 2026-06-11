@@ -143,6 +143,20 @@ export async function getEventBlocks(pageId: string): Promise<NotionBlock[]> {
   return res.results as NotionBlock[]
 }
 
+// 首頁活動介紹圖頁面 ID
+const ACTIVITY_FEATURED_PAGE_ID = '37c6dc6ec22281c9bf6cc261dd02bb65'
+
+export async function getActivityFeaturedImage(): Promise<string | null> {
+  const res = await notion.blocks.children.list({ block_id: ACTIVITY_FEATURED_PAGE_ID, page_size: 10 })
+  for (const block of res.results as any[]) {
+    if (block.type === 'image') {
+      const img = block.image
+      return img.type === 'file' ? img.file.url : img.external?.url ?? null
+    }
+  }
+  return null
+}
+
 // 活動紀錄相片頁面 ID
 const ACTIVITY_PHOTOS_PAGE_ID = '37c6dc6ec22281b284d6ea0e3e5f7ff2'
 

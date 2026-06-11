@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getEvents, getSiteSettings, getActivityPhotos } from '@/lib/notion'
+import { getEvents, getSiteSettings, getActivityPhotos, getActivityFeaturedImage } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
 
@@ -14,15 +14,13 @@ const SERVICES = [
 ]
 
 export default async function Home() {
-  const [allEvents, settings, carouselImages] = await Promise.all([
+  const [allEvents, settings, carouselImages, featuredImage] = await Promise.all([
     getEvents(),
     getSiteSettings(),
     getActivityPhotos(),
+    getActivityFeaturedImage(),
   ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
-
-  // 活動介紹區：取第一張有封面圖的活動圖
-  const featuredImage = allEvents.find(e => e.coverImage)?.coverImage ?? null
 
   return (
     <div>
@@ -75,8 +73,11 @@ export default async function Home() {
             </Link>
           </div>
 
-          {/* Right: photo */}
+          {/* Right: quote + photo */}
           <div>
+            <p className="text-white/55 text-sm mb-4 pl-3 border-l-2 border-white/30 leading-relaxed">
+              不只是社交，還有派對、運動、講座，等待里民們加入
+            </p>
             {featuredImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
