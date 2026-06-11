@@ -3,88 +3,106 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 export default function PhotoCarousel() {
   const [images, setImages] = useState<string[]>([])
-  const [idx, setIdx] = useState(0)
-  const [opacity, setOpacity] = useState(1)
+  const [cur, setCur] = useState(0)       // 目前顯示的圖
+  const [next, setNext] = useState<number | null>(null)  // 滑入的圖
+  const [dir, setDir] = useState<1 | -1>(1) // 1 = 往左滑, -1 = 往右滑
+  const [moving, setMoving] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const lockRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // 拿最新的 Notion 圖片 URL
   const fetchImages = useCallback(async () => {
     try {
       const res = await fetch('/api/activity-photos', { cache: 'no-store' })
       const data = await res.json()
       if (data.photos?.length) setImages(data.photos)
-    } catch {
-      // 靜默失敗
-    } finally {
-      setFetching(false)
-    }
+    } catch {}
+    finally { setFetching(false) }
   }, [])
 
-  useEffect(() => {
-    fetchImages()
-  }, [fetchImages])
+  useEffect(() => { fetchImages() }, [fetchImages])
 
-  // 6 秒自動換圖，換之前重新抓一次 URL 防止過期
-  const advance = useCallback(async (newIdx: number) => {
-    setOpacity(0)
-    // 淡出期間靜默更新 URL
-    await fetchImages()
-    setTimeout(() => {
-      setIdx(newIdx)
-      setOpacity(1)
-    }, 400)
-  }, [fetchImages])
-
-  useEffect(() => {
-    if (images.length < 2) return
-    timerRef.current = setInterval(() => {
-      setIdx(prev => {
-        const next = (prev + 1) % images.length
-        advance(next)
-        return prev // 先不改，等 advance 裡的 setTimeout 改
+  const slideTo = useCallback((newIdx: number, slideDir: 1 | -1 = 1) => {
+    if (lockRef.current) return
+    lockRef.current = true
+    setDir(slideDir)
+    setNext(newIdx)
+    // 一個 frame 後啟動 transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setMoving(true)
+        setTimeout(() => {
+          setCur(newIdx)
+          setNext(null)
+          setMoving(false)
+          lockRef.current = false
+        }, 450)
       })
-    }, 6000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [images.length, advance])
+    })
+  }, [])
 
-  const goTo = async (i: number) => {
+  const startTimer = useCallback((len: number) => {
     if (timerRef.current) clearInterval(timerRef.current)
-    await advance(i)
-    // 重新啟動計時
+    if (len < 2) return
     timerRef.current = setInterval(() => {
-      setIdx(prev => {
-        const next = (prev + 1) % images.length
-        advance(next)
+      fetchImages()
+      setCur(prev => {
+        const n = (prev + 1) % len
+        slideTo(n, 1)
         return prev
       })
     }, 6000)
+  }, [fetchImages, slideTo])
+
+  useEffect(() => {
+    if (!images.length) return
+    startTimer(images.length)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [images.length, startTimer])
+
+  const goTo = (i: number) => {
+    if (lockRef.current) return
+    const d = i > cur ? 1 : -1
+    startTimer(images.length)
+    slideTo(i, d)
   }
 
-  if (fetching) {
-    return (
-      <div className="rounded-2xl bg-white/10 aspect-[4/3] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/30 border-t-white/70 rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (fetching) return (
+    <div className="rounded-2xl bg-white/10 aspect-[4/3] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-white/30 border-t-white/70 rounded-full animate-spin" />
+    </div>
+  )
 
-  if (!images.length) {
-    return <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
-  }
+  if (!images.length) return <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
+
+  // 目前圖：靜止時 0，滑動時往反方向推出
+  const curX = moving ? (dir === 1 ? '-100%' : '100%') : '0%'
+  // 新圖：滑動前從反方向進場，滑動後到 0
+  const nextX = moving ? '0%' : (dir === 1 ? '100%' : '-100%')
 
   return (
     <div>
-      <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-white/10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-white/10 relative">
+        {/* 目前的圖 */}
         <img
-          src={images[idx]}
+          src={images[cur]}
           alt=""
-          className="w-full h-full object-cover"
-          style={{ opacity, transition: 'opacity 0.4s ease' }}
-          onError={fetchImages} // 破圖時立刻重抓
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ transform: `translateX(${curX})`, transition: moving ? 'transform 0.45s ease-in-out' : 'none' }}
+          onError={fetchImages}
         />
+        {/* 滑入的圖 */}
+        {next !== null && (
+          <img
+            src={images[next]}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ transform: `translateX(${nextX})`, transition: moving ? 'transform 0.45s ease-in-out' : 'none' }}
+            onError={fetchImages}
+          />
+        )}
       </div>
+
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5 mt-4">
           {images.map((_, i) => (
@@ -92,7 +110,7 @@ export default function PhotoCarousel() {
               key={i}
               onClick={() => goTo(i)}
               className={`h-1.5 rounded-full transition-all ${
-                i === idx ? 'w-5 bg-white' : 'w-1.5 bg-white/30'
+                i === (next ?? cur) ? 'w-5 bg-white' : 'w-1.5 bg-white/30'
               }`}
             />
           ))}
