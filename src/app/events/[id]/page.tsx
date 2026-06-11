@@ -32,7 +32,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   const badge = statusBadge[event.status] ?? 'bg-white/20 text-white/60'
   const displayImage = event.coverImage || event.iconImage
-  const hasFeeCards = event.memberFee || event.regularFee
+  const hasFeeCards = event.regularFee || event.memberFee || event.earlyFee
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -133,14 +133,18 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           {/* Fee section */}
           {hasFeeCards ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-2xl p-5 text-center border-2 border-brand-100">
-                <p className="text-xs text-brand-400 mb-2 font-medium tracking-wide">資深里民</p>
-                <p className="text-2xl font-black text-brand-700">{event.memberFee || '—'}</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white rounded-2xl p-4 text-center border-2 border-amber-100">
+                <p className="text-xs text-amber-500 mb-2 font-semibold tracking-wide">早鳥里民</p>
+                <p className="text-xl font-black text-brand-700">{event.earlyFee || '—'}</p>
               </div>
-              <div className="bg-white rounded-2xl p-5 text-center border-2 border-brand-50">
-                <p className="text-xs text-brand-400 mb-2 font-medium tracking-wide">一般里民</p>
-                <p className="text-2xl font-black text-brand-700">{event.regularFee || '—'}</p>
+              <div className="bg-white rounded-2xl p-4 text-center border-2 border-brand-100">
+                <p className="text-xs text-brand-500 mb-2 font-semibold tracking-wide">資深里民</p>
+                <p className="text-xl font-black text-brand-700">{event.memberFee || '—'}</p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 text-center border-2 border-brand-50">
+                <p className="text-xs text-brand-400 mb-2 font-semibold tracking-wide">一般里民</p>
+                <p className="text-xl font-black text-brand-700">{event.regularFee || '—'}</p>
               </div>
             </div>
           ) : event.fee ? (

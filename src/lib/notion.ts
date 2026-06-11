@@ -11,8 +11,9 @@ export type Event = {
   location: string
   category: string
   fee: string
-  memberFee: string
   regularFee: string
+  memberFee: string
+  earlyFee: string
   registrationUrl: string | null
   status: string
   coverImage: string | null
@@ -57,8 +58,9 @@ export async function getEvents(): Promise<Event[]> {
     location: getText(page.properties['地點']),
     category: getText(page.properties['類別']),
     fee: getText(page.properties['費用說明']),
-    memberFee: getText(page.properties['資深里民費用']),
     regularFee: getText(page.properties['一般里民費用']),
+    memberFee: getText(page.properties['資深里民費用']),
+    earlyFee: getText(page.properties['早鳥里民費用']),
     registrationUrl: getText(page.properties['報名連結']) || null,
     status: getText(page.properties['狀態']),
     coverImage: getCover(page),
@@ -152,8 +154,9 @@ export async function getEvent(id: string): Promise<Event | null> {
       location: getText(page.properties['地點']),
       category: getText(page.properties['類別']),
       fee: getText(page.properties['費用說明']),
-      memberFee: getText(page.properties['資深里民費用']),
       regularFee: getText(page.properties['一般里民費用']),
+      memberFee: getText(page.properties['資深里民費用']),
+      earlyFee: getText(page.properties['早鳥里民費用']),
       registrationUrl: getText(page.properties['報名連結']) || null,
       status: getText(page.properties['狀態']),
       coverImage: getCover(page),
