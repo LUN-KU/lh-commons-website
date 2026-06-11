@@ -3,13 +3,11 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 export default function PhotoCarousel() {
   const [images, setImages] = useState<string[]>([])
-  const [cur, setCur] = useState(0)       // 目前顯示的圖
-  const [next, setNext] = useState<number | null>(null)  // 滑入的圖
-  const [dir, setDir] = useState<1 | -1>(1) // 1 = 往左滑, -1 = 往右滑
-  const [moving, setMoving] = useState(false)
+  const [idx, setIdx] = useState(0)
+  const [animated, setAnimated] = useState(true)
   const [fetching, setFetching] = useState(true)
-  const lockRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lockRef = useRef(false)
 
   const fetchImages = useCallback(async () => {
     try {
@@ -22,49 +20,43 @@ export default function PhotoCarousel() {
 
   useEffect(() => { fetchImages() }, [fetchImages])
 
-  const slideTo = useCallback((newIdx: number, slideDir: 1 | -1 = 1) => {
+  const advance = useCallback((images: string[]) => {
     if (lockRef.current) return
     lockRef.current = true
-    setDir(slideDir)
-    setNext(newIdx)
-    // 一個 frame 後啟動 transition
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setMoving(true)
-        setTimeout(() => {
-          setCur(newIdx)
-          setNext(null)
-          setMoving(false)
-          lockRef.current = false
-        }, 450)
-      })
+    setIdx(prev => {
+      const next = (prev + 1) % images.length
+      if (next === 0) {
+        // 循環回頭：先不動畫跳回 0，再打開動畫
+        setAnimated(false)
+        requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)))
+      } else {
+        setAnimated(true)
+      }
+      return next
     })
+    setTimeout(() => { lockRef.current = false }, 450)
   }, [])
 
-  const startTimer = useCallback((len: number) => {
+  const resetTimer = useCallback((images: string[]) => {
     if (timerRef.current) clearInterval(timerRef.current)
-    if (len < 2) return
+    if (images.length < 2) return
     timerRef.current = setInterval(() => {
       fetchImages()
-      setCur(prev => {
-        const n = (prev + 1) % len
-        slideTo(n, 1)
-        return prev
-      })
+      advance(images)
     }, 6000)
-  }, [fetchImages, slideTo])
+  }, [fetchImages, advance])
 
   useEffect(() => {
     if (!images.length) return
-    startTimer(images.length)
+    resetTimer(images)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [images.length, startTimer])
+  }, [images, resetTimer])
 
   const goTo = (i: number) => {
     if (lockRef.current) return
-    const d = i > cur ? 1 : -1
-    startTimer(images.length)
-    slideTo(i, d)
+    setAnimated(true)
+    setIdx(i)
+    resetTimer(images)
   }
 
   if (fetching) return (
@@ -75,42 +67,44 @@ export default function PhotoCarousel() {
 
   if (!images.length) return <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
 
-  // 目前圖：靜止時 0，滑動時往反方向推出
-  const curX = moving ? (dir === 1 ? '-100%' : '100%') : '0%'
-  // 新圖：滑動前從反方向進場，滑動後到 0
-  const nextX = moving ? '0%' : (dir === 1 ? '100%' : '-100%')
+  const n = images.length
+  // 軌道整體往左移，每格 = 1 個 container 寬
+  const trackX = -(idx / n) * 100
 
   return (
     <div>
-      <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-white/10 relative">
-        {/* 目前的圖 */}
-        <img
-          src={images[cur]}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: `translateX(${curX})`, transition: moving ? 'transform 0.45s ease-in-out' : 'none' }}
-          onError={fetchImages}
-        />
-        {/* 滑入的圖 */}
-        {next !== null && (
-          <img
-            src={images[next]}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ transform: `translateX(${nextX})`, transition: moving ? 'transform 0.45s ease-in-out' : 'none' }}
-            onError={fetchImages}
-          />
-        )}
+      <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-white/10">
+        {/* 整條軌道一起滑，不分開控制各圖 */}
+        <div
+          className="flex h-full"
+          style={{
+            width: `${n * 100}%`,
+            transform: `translateX(${trackX}%)`,
+            transition: animated ? 'transform 0.4s ease-in-out' : 'none',
+          }}
+        >
+          {images.map((src, i) => (
+            <div key={i} style={{ width: `${100 / n}%` }} className="flex-shrink-0 h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={fetchImages}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {images.length > 1 && (
+      {n > 1 && (
         <div className="flex justify-center gap-1.5 mt-4">
           {images.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
               className={`h-1.5 rounded-full transition-all ${
-                i === (next ?? cur) ? 'w-5 bg-white' : 'w-1.5 bg-white/30'
+                i === idx ? 'w-5 bg-white' : 'w-1.5 bg-white/30'
               }`}
             />
           ))}
