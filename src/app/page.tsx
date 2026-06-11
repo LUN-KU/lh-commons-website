@@ -32,8 +32,8 @@ export default async function Home() {
         </p>
 
         {/* Large display text */}
-        <div className="border-t border-white/10 pt-10 mb-12 overflow-hidden">
-          <p className="text-[clamp(2.8rem,9vw,7.5rem)] font-black text-white/8 tracking-[0.12em] leading-none select-none">
+        <div className="border-t border-white/10 pt-10 mb-12">
+          <p className="text-[clamp(2.2rem,5.8vw,5.5rem)] font-thin text-white/70 tracking-[0.15em] leading-none select-none whitespace-nowrap">
             LIBERTY HOPEFUL
           </p>
         </div>
