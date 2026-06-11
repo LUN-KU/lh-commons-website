@@ -33,7 +33,7 @@ export default async function Home() {
 
         {/* Large display text */}
         <div className="border-t border-white/10 pt-10 mb-12 overflow-hidden">
-          <p className="text-[clamp(2.8rem,9vw,7.5rem)] font-black text-white/8 tracking-[0.12em] leading-none select-none whitespace-nowrap">
+          <p className="text-[clamp(2.8rem,9vw,7.5rem)] font-black text-white/8 tracking-[0.12em] leading-none select-none">
             LIBERTY HOPEFUL
           </p>
         </div>
@@ -45,9 +45,17 @@ export default async function Home() {
           </div>
           <div>
             <p className="text-white font-bold text-lg mb-3">領航里里民｜交流、學習、社交</p>
-            <p className="text-white/55 text-sm leading-relaxed max-w-lg">
+            <p className="text-white/55 text-sm leading-relaxed max-w-lg mb-4">
               {settings.joinUs || '這裡是一個交流學習的平台，我們會舉辦各種活動包含學習讀書會、同樂桌遊、繪畫手作課程、烘焙料理、劇本殺密室等等，希望大家能在這裡找到可以一起前進成長的同伴。'}
             </p>
+            <a
+              href="https://www.instagram.com/l.h_commons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
+            >
+              追蹤 @l.h_commons →
+            </a>
           </div>
         </div>
       </section>
