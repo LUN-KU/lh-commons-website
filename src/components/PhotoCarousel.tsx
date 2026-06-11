@@ -11,27 +11,14 @@ export default function PhotoCarousel({ images }: { images: string[] }) {
   }, [images.length])
 
   if (!images.length) {
-    return (
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
-        <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
-      </div>
-    )
+    return <div className="rounded-2xl bg-white/10 aspect-[4/3]" />
   }
-
-  const show = (offset: number) => images[(idx + offset) % images.length]
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl overflow-hidden aspect-[4/3]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={show(0)} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="rounded-2xl overflow-hidden aspect-[4/3]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={show(1)} alt="" className="w-full h-full object-cover" />
-        </div>
+      <div className="rounded-2xl overflow-hidden aspect-[4/3]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={images[idx]} alt="" className="w-full h-full object-cover transition-opacity duration-500" />
       </div>
       <div className="flex justify-center gap-1.5 mt-4">
         {images.map((_, i) => (
