@@ -143,6 +143,22 @@ export async function getEventBlocks(pageId: string): Promise<NotionBlock[]> {
   return res.results as NotionBlock[]
 }
 
+// 活動紀錄相片頁面 ID
+const ACTIVITY_PHOTOS_PAGE_ID = '37c6dc6ec22281b284d6ea0e3e5f7ff2'
+
+export async function getActivityPhotos(): Promise<string[]> {
+  const res = await notion.blocks.children.list({ block_id: ACTIVITY_PHOTOS_PAGE_ID, page_size: 50 })
+  const urls: string[] = []
+  for (const block of res.results as any[]) {
+    if (block.type === 'image') {
+      const img = block.image
+      const url = img.type === 'file' ? img.file.url : img.external?.url
+      if (url) urls.push(url)
+    }
+  }
+  return urls.slice(0, 6)
+}
+
 export async function getEvent(id: string): Promise<Event | null> {
   try {
     const page: any = await notion.pages.retrieve({ page_id: id })

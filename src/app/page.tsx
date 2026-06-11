@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getEvents, getSiteSettings } from '@/lib/notion'
+import { getEvents, getSiteSettings, getActivityPhotos } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
 
@@ -14,17 +14,15 @@ const SERVICES = [
 ]
 
 export default async function Home() {
-  const [allEvents, settings] = await Promise.all([getEvents(), getSiteSettings()])
+  const [allEvents, settings, carouselImages] = await Promise.all([
+    getEvents(),
+    getSiteSettings(),
+    getActivityPhotos(),
+  ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
 
-  // 取有封面圖的活動，最多 6 張給 carousel
-  const carouselImages = allEvents
-    .filter(e => e.coverImage || e.iconImage)
-    .map(e => (e.coverImage || e.iconImage) as string)
-    .slice(0, 6)
-
   // 活動介紹區：取第一張有封面圖的活動圖
-  const featuredImage = carouselImages[0] ?? null
+  const featuredImage = allEvents.find(e => e.coverImage)?.coverImage ?? null
 
   return (
     <div>
