@@ -10,8 +10,9 @@ export default function Navbar() {
           <span className="text-lg font-bold text-white tracking-widest">領航里</span>
         </Link>
         <div className="flex gap-6 text-sm font-medium text-white/70">
-          <Link href="/events" className="hover:text-white transition-colors">活動</Link>
           <Link href="/about" className="hover:text-white transition-colors">關於我們</Link>
+          <Link href="/collab" className="hover:text-white transition-colors">合作專區</Link>
+          <Link href="/events" className="hover:text-white transition-colors">活動行事曆＆報名</Link>
           <Link href="/links" className="hover:text-white transition-colors">服務連結</Link>
         </div>
       </div>
