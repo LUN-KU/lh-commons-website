@@ -1,9 +1,10 @@
 import { getEvent, getEvents, getEventBlocks } from '@/lib/notion'
 import NotionBlocks from '@/components/NotionBlocks'
+import RegisterButton from '@/components/RegisterButton'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export async function generateStaticParams() {
   const events = await getEvents()
@@ -82,24 +83,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </div>
 
           {/* CTA button */}
-          {event.registrationUrl && event.status === '報名中' ? (
-            <a
-              href={event.registrationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center bg-white text-brand-800 font-bold py-4 rounded-2xl hover:bg-brand-50 transition-colors shadow-lg text-base"
-            >
-              立即報名
-            </a>
-          ) : event.status === '額滿' ? (
-            <div className="w-full text-center bg-white/20 text-white/50 font-bold py-4 rounded-2xl text-base">
-              已額滿
-            </div>
-          ) : event.status === '已結束' ? (
-            <div className="w-full text-center bg-white/10 text-white/30 font-bold py-4 rounded-2xl text-base">
-              活動已結束
-            </div>
-          ) : null}
+          <RegisterButton
+            eventId={event.id}
+            eventName={event.name}
+            eventStatus={event.status}
+            memberOnly={event.memberOnly}
+          />
 
           <p className="text-center text-xs text-white/30">
             報名問題請私訊 IG{' '}

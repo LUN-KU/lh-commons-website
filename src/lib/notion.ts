@@ -18,6 +18,7 @@ export type Event = {
   status: string
   coverImage: string | null
   iconImage: string | null
+  memberOnly: boolean
 }
 
 function getCover(page: any): string | null {
@@ -65,6 +66,7 @@ export async function getEvents(): Promise<Event[]> {
     status: getText(page.properties['狀態']),
     coverImage: getCover(page),
     iconImage: getIcon(page),
+    memberOnly: page.properties['會員限定']?.checkbox ?? false,
   }))
 }
 
@@ -191,6 +193,7 @@ export async function getEvent(id: string): Promise<Event | null> {
       status: getText(page.properties['狀態']),
       coverImage: getCover(page),
       iconImage: getIcon(page),
+      memberOnly: page.properties['會員限定']?.checkbox ?? false,
     }
   } catch {
     return null

@@ -1,11 +1,15 @@
 import { getEvents } from '@/lib/notion'
 import EventsGrid from '@/components/EventsGrid'
 import EventCalendar from '@/components/EventCalendar'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export default async function EventsPage() {
-  const events = await getEvents()
+  const [events, session] = await Promise.all([getEvents(), getServerSession(authOptions)])
+  const memberType = session?.user?.memberType
+  const visibleEvents = events.filter(e => !e.memberOnly || memberType === '資深里民')
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
@@ -14,12 +18,12 @@ export default async function EventsPage() {
 
       {/* 月曆 */}
       <div className="mb-12">
-        <EventCalendar events={events} />
+        <EventCalendar events={visibleEvents} />
       </div>
 
       {/* 活動列表 */}
       <h2 className="text-xl font-black text-white mb-6">所有活動</h2>
-      <EventsGrid events={events} />
+      <EventsGrid events={visibleEvents} />
     </div>
   )
 }
