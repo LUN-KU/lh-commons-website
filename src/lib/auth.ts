@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import { getMemberByEmail } from './members'
 
 export const authOptions: NextAuthOptions = {
@@ -7,6 +8,19 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      id: 'email-login',
+      name: 'Email',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null
+        const member = await getMemberByEmail(credentials.email)
+        if (!member || member.status !== '啟用') return null
+        return { id: member.id, email: member.email, name: member.name }
+      },
     }),
   ],
   callbacks: {

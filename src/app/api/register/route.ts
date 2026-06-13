@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { eventId, eventName } = await req.json()
-  if (!eventId || !eventName) {
+  const { eventId, eventName, paymentNote } = await req.json()
+  if (!eventId || !eventName || !paymentNote) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     eventId,
     eventName,
     session.user.email,
-    session.user.name ?? ''
+    session.user.name ?? '',
+    paymentNote
   )
 
   return NextResponse.json(result)

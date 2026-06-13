@@ -31,11 +31,26 @@ export async function getMemberByEmail(email: string): Promise<Member | null> {
   }
 }
 
+export async function isUserRegistered(eventId: string, memberEmail: string): Promise<boolean> {
+  const res = await notion.databases.query({
+    database_id: REGISTRATIONS_DB_ID,
+    filter: {
+      and: [
+        { property: '活動ID', rich_text: { equals: eventId } },
+        { property: '里民Email', rich_text: { equals: memberEmail } },
+        { property: '狀態', select: { equals: '已報名' } },
+      ],
+    },
+  })
+  return res.results.length > 0
+}
+
 export async function registerForEvent(
   eventId: string,
   eventName: string,
   memberEmail: string,
-  memberName: string
+  memberName: string,
+  paymentNote: string
 ): Promise<{ ok: boolean; duplicate: boolean }> {
   const existing = await notion.databases.query({
     database_id: REGISTRATIONS_DB_ID,
@@ -58,6 +73,7 @@ export async function registerForEvent(
       '姓名': { rich_text: [{ text: { content: memberName } }] },
       '報名時間': { date: { start: new Date().toISOString() } },
       '狀態': { select: { name: '已報名' } },
+      '付款備註': { rich_text: [{ text: { content: paymentNote } }] },
     },
   })
   return { ok: true, duplicate: false }
