@@ -3,6 +3,9 @@ import NotionBlocks from '@/components/NotionBlocks'
 import RegisterButton from '@/components/RegisterButton'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import { isUserRegistered } from '@/lib/members'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,11 +28,16 @@ const statusBadge: Record<string, string> = {
 }
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
-  const [event, blocks] = await Promise.all([
+  const [event, blocks, session] = await Promise.all([
     getEvent(params.id),
     getEventBlocks(params.id),
+    getServerSession(authOptions),
   ])
   if (!event) notFound()
+
+  const isRegistered = session?.user?.email
+    ? await isUserRegistered(event.id, session.user.email)
+    : false
 
   const badge = statusBadge[event.status] ?? 'bg-white/20 text-white/60'
   const displayImage = event.coverImage || event.iconImage
@@ -88,6 +96,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
             eventName={event.name}
             eventStatus={event.status}
             memberOnly={event.memberOnly}
+            isRegistered={isRegistered}
           />
 
           <p className="text-center text-xs text-white/30">
@@ -151,7 +160,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           {/* Notion content blocks */}
           {blocks.length > 0 && (
-            <div className="bg-white rounded-3xl p-7 shadow-sm">
+            <div className="bg-white rounded-3xl px-6 py-7 shadow-sm space-y-1">
               <NotionBlocks blocks={blocks} />
             </div>
           )}

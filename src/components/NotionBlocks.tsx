@@ -11,20 +11,26 @@ function RichText({ arr }: { arr: any[] }) {
     <>
       {arr.map((t: any, i: number) => {
         let node: React.ReactNode = t.plain_text
-        if (t.annotations?.bold) node = <strong key={i}>{node}</strong>
+        if (t.annotations?.bold) node = <strong key={i} className="font-semibold">{node}</strong>
         if (t.annotations?.italic) node = <em key={i}>{node}</em>
         if (t.annotations?.code) node = <code key={i} className="bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded text-sm font-mono">{node}</code>
-        if (t.href) node = <a key={i} href={t.href} target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-800">{node}</a>
+        if (t.href) node = <a key={i} href={t.href} target="_blank" rel="noopener noreferrer" className="text-brand-500 underline underline-offset-2 hover:text-brand-700 break-all">{node}</a>
         return <span key={i}>{node}</span>
       })}
     </>
   )
 }
 
+// 偵測是否以 emoji 開頭（作為區塊標題行）
+const EMOJI_RE = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
+
+function startsWithEmoji(text: string) {
+  return EMOJI_RE.test(text.trim())
+}
+
 function youtubeEmbedUrl(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
-  if (match) return `https://www.youtube.com/embed/${match[1]}`
-  return null
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null
 }
 
 export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
@@ -33,11 +39,14 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
   let numberedBuffer: NotionBlock[] = []
 
   function flushBullets() {
-    if (bulletBuffer.length === 0) return
+    if (!bulletBuffer.length) return
     elements.push(
-      <ul key={`ul-${elements.length}`} className="list-disc pl-6 space-y-1.5 text-brand-700 leading-relaxed">
+      <ul key={`ul-${elements.length}`} className="space-y-2 pl-2">
         {bulletBuffer.map(b => (
-          <li key={b.id}><RichText arr={b.bulleted_list_item?.rich_text} /></li>
+          <li key={b.id} className="flex gap-2.5 text-brand-700 leading-relaxed">
+            <span className="flex-none mt-2 w-1.5 h-1.5 rounded-full bg-brand-300 inline-block" />
+            <span><RichText arr={b.bulleted_list_item?.rich_text} /></span>
+          </li>
         ))}
       </ul>
     )
@@ -45,11 +54,16 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
   }
 
   function flushNumbered() {
-    if (numberedBuffer.length === 0) return
+    if (!numberedBuffer.length) return
     elements.push(
-      <ol key={`ol-${elements.length}`} className="list-decimal pl-6 space-y-1.5 text-brand-700 leading-relaxed">
-        {numberedBuffer.map(b => (
-          <li key={b.id}><RichText arr={b.numbered_list_item?.rich_text} /></li>
+      <ol key={`ol-${elements.length}`} className="space-y-2 pl-2">
+        {numberedBuffer.map((b, idx) => (
+          <li key={b.id} className="flex gap-3 text-brand-700 leading-relaxed">
+            <span className="flex-none w-6 h-6 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center mt-0.5">
+              {idx + 1}
+            </span>
+            <span><RichText arr={b.numbered_list_item?.rich_text} /></span>
+          </li>
         ))}
       </ol>
     )
@@ -64,10 +78,22 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
       case 'paragraph': {
         const text = richText(block.paragraph?.rich_text)
         if (!text.trim()) {
-          elements.push(<div key={block.id} className="h-3" />)
+          elements.push(<div key={block.id} className="h-2" />)
+          break
+        }
+
+        // emoji 開頭 → 渲染為區塊卡片
+        if (startsWithEmoji(text)) {
+          elements.push(
+            <div key={block.id} className="bg-brand-50 border border-brand-100 rounded-2xl px-5 py-4">
+              <p className="text-brand-800 leading-relaxed text-[15px]">
+                <RichText arr={block.paragraph?.rich_text} />
+              </p>
+            </div>
+          )
         } else {
           elements.push(
-            <p key={block.id} className="text-brand-700 leading-relaxed">
+            <p key={block.id} className="text-brand-700 leading-relaxed text-[15px]">
               <RichText arr={block.paragraph?.rich_text} />
             </p>
           )
@@ -77,23 +103,28 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'heading_1':
         elements.push(
-          <h2 key={block.id} className="text-2xl font-black text-brand-900 mt-2">
-            <RichText arr={block.heading_1?.rich_text} />
-          </h2>
+          <div key={block.id} className="pt-2">
+            <h2 className="text-xl font-black text-brand-900 pb-2 border-b border-brand-100">
+              <RichText arr={block.heading_1?.rich_text} />
+            </h2>
+          </div>
         )
         break
 
       case 'heading_2':
         elements.push(
-          <h3 key={block.id} className="text-xl font-bold text-brand-800 mt-1">
-            <RichText arr={block.heading_2?.rich_text} />
-          </h3>
+          <div key={block.id} className="pt-1">
+            <h3 className="text-base font-bold text-brand-800 flex items-center gap-2">
+              <span className="w-1 h-4 bg-brand-400 rounded-full inline-block flex-none" />
+              <RichText arr={block.heading_2?.rich_text} />
+            </h3>
+          </div>
         )
         break
 
       case 'heading_3':
         elements.push(
-          <h4 key={block.id} className="text-lg font-bold text-brand-700 mt-1">
+          <h4 key={block.id} className="text-sm font-bold text-brand-600 uppercase tracking-wide">
             <RichText arr={block.heading_3?.rich_text} />
           </h4>
         )
@@ -109,7 +140,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'quote':
         elements.push(
-          <blockquote key={block.id} className="border-l-4 border-brand-300 pl-4 text-brand-500 italic">
+          <blockquote key={block.id} className="border-l-4 border-brand-300 pl-4 py-1 text-brand-500 italic text-sm">
             <RichText arr={block.quote?.rich_text} />
           </blockquote>
         )
@@ -117,9 +148,9 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'callout':
         elements.push(
-          <div key={block.id} className="flex gap-3 bg-brand-50 border border-brand-100 rounded-xl p-4">
-            <span>{block.callout?.icon?.emoji ?? 'ℹ️'}</span>
-            <p className="text-brand-700 leading-relaxed">
+          <div key={block.id} className="flex gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+            <span className="text-xl flex-none">{block.callout?.icon?.emoji ?? 'ℹ️'}</span>
+            <p className="text-amber-800 leading-relaxed text-sm">
               <RichText arr={block.callout?.rich_text} />
             </p>
           </div>
@@ -137,7 +168,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
         const caption = richText(block.image?.caption)
         if (url) {
           elements.push(
-            <figure key={block.id} className="my-2">
+            <figure key={block.id}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt={caption || '活動圖片'} className="w-full rounded-2xl object-cover" />
               {caption && <figcaption className="text-center text-sm text-brand-400 mt-2">{caption}</figcaption>}
@@ -166,9 +197,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
               </div>
             )
           } else {
-            elements.push(
-              <video key={block.id} src={url} controls className="w-full rounded-2xl" />
-            )
+            elements.push(<video key={block.id} src={url} controls className="w-full rounded-2xl" />)
           }
         }
         break
