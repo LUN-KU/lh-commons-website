@@ -22,10 +22,13 @@ function RichText({ arr }: { arr: any[] }) {
 }
 
 // 偵測是否以 emoji 開頭（作為區塊標題行）
-const EMOJI_RE = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
-
-function startsWithEmoji(text: string) {
-  return EMOJI_RE.test(text.trim())
+function startsWithEmoji(text: string): boolean {
+  const cp = text.trim().codePointAt(0)
+  if (!cp) return false
+  return (
+    (cp >= 0x2600 && cp <= 0x27BF) ||  // ☀ ⚠ ⭐ 等符號
+    (cp >= 0x1F000 && cp <= 0x1FFFF)   // 🎯 🏅 💰 📍 🔥 等全部 emoji
+  )
 }
 
 function youtubeEmbedUrl(url: string): string | null {
