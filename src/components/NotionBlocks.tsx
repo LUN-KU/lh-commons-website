@@ -10,7 +10,17 @@ function RichText({ arr }: { arr: any[] }) {
   return (
     <>
       {arr.map((t: any, i: number) => {
-        let node: React.ReactNode = t.plain_text
+        const parts = (t.plain_text as string).split('\n')
+        let node: React.ReactNode = (
+          <>
+            {parts.map((part, pi) => (
+              <span key={pi}>
+                {part}
+                {pi < parts.length - 1 && <br />}
+              </span>
+            ))}
+          </>
+        )
         if (t.annotations?.bold) node = <strong key={i} className="font-semibold">{node}</strong>
         if (t.annotations?.italic) node = <em key={i}>{node}</em>
         if (t.annotations?.code) node = <code key={i} className="bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded text-sm font-mono">{node}</code>
