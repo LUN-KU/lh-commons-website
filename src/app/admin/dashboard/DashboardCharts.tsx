@@ -1,13 +1,87 @@
 'use client'
 
+import { useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, Legend, LineChart, Line
+  CartesianGrid, Legend
 } from 'recharts'
 import type { DashboardStats } from '@/lib/adminData'
 
 function fmt(n: number) {
   return n.toLocaleString('zh-TW')
+}
+
+type Participant = {
+  name: string
+  email: string
+  registrationDate: string
+  isReturning: boolean
+}
+
+function ParticipantModal({
+  eventName, eventDate, eventId,
+  onClose
+}: {
+  eventName: string
+  eventDate: string
+  eventId: string
+  onClose: () => void
+}) {
+  const [participants, setParticipants] = useState<Participant[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  if (!participants && !loading) {
+    setLoading(true)
+    fetch(`/api/admin/event-registrations?eventId=${eventId}&eventDate=${eventDate}`)
+      .then(r => r.json())
+      .then(d => { setParticipants(d.participants ?? []); setLoading(false) })
+  }
+
+  const returningCount = participants?.filter(p => p.isReturning).length ?? 0
+  const newCount = (participants?.length ?? 0) - returningCount
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="p-5 border-b border-gray-100">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="font-semibold text-brand-800 text-lg">{eventName}</h2>
+              <p className="text-gray-400 text-sm mt-0.5">{eventDate}</p>
+            </div>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+          </div>
+          {participants && (
+            <div className="flex gap-3 mt-3">
+              <span className="text-xs bg-brand-50 text-brand-700 px-3 py-1 rounded-full">共 {participants.length} 人</span>
+              {returningCount > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">回流 {returningCount} 人</span>}
+              {newCount > 0 && <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">新里民 {newCount} 人</span>}
+            </div>
+          )}
+        </div>
+        <div className="overflow-y-auto flex-1 p-5">
+          {loading && <p className="text-gray-400 text-sm text-center py-8">載入中...</p>}
+          {participants?.length === 0 && <p className="text-gray-400 text-sm text-center py-8">尚無報名者</p>}
+          {participants && participants.length > 0 && (
+            <ul className="space-y-2">
+              {participants.map((p, i) => (
+                <li key={i} className={`flex items-center justify-between rounded-xl px-4 py-3 ${p.isReturning ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{p.name}</p>
+                    <p className="text-xs text-gray-400">{p.email}</p>
+                  </div>
+                  {p.isReturning
+                    ? <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0">回流里民</span>
+                    : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">新里民</span>
+                  }
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function SummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -55,12 +129,22 @@ function SyncButton() {
   )
 }
 
+type ModalState = { eventId: string; eventName: string; eventDate: string } | null
+
 export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
   const { achievementData, plData, monthlyRevenue, returnRateData, summary } = stats
-  const hasMatch = achievementData.some(a => a.matched)
+  const [modal, setModal] = useState<ModalState>(null)
 
   return (
     <div className="space-y-8">
+      {modal && (
+        <ParticipantModal
+          eventId={modal.eventId}
+          eventName={modal.eventName}
+          eventDate={modal.eventDate}
+          onClose={() => setModal(null)}
+        />
+      )}
       {/* Header actions */}
       <div className="flex justify-end gap-2">
         <SyncButton />
@@ -139,7 +223,11 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {achievementData.map((ev, i) => (
-              <div key={i} className="border border-gray-100 rounded-xl p-4">
+              <button
+                key={i}
+                onClick={() => setModal({ eventId: ev.eventId, eventName: ev.name, eventDate: ev.date })}
+                className="border border-gray-100 rounded-xl p-4 text-left hover:border-brand-200 hover:shadow-sm transition-all cursor-pointer w-full"
+              >
                 <p className="text-sm font-medium text-gray-800 truncate">{ev.name}</p>
                 <p className="text-xs text-gray-400 mb-3">{ev.date}</p>
                 <div className="flex items-end justify-between mb-2">
@@ -163,10 +251,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                     />
                   </div>
                 )}
-                {!ev.hasCost && (
-                  <p className="text-xs text-gray-400 mt-2">損益尚未填入</p>
-                )}
-              </div>
+                <p className="text-xs text-gray-400 mt-2">{ev.hasCost ? '點擊查看名單' : '點擊查看名單・損益待填'}</p>
+              </button>
             ))}
           </div>
         )}

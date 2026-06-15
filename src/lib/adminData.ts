@@ -31,6 +31,7 @@ export type CostRecord = {
 
 export type DashboardStats = {
   achievementData: {
+    eventId: string
     name: string
     date: string
     target: number
@@ -252,6 +253,7 @@ export function computeStats(
       const actual = byEventId.get(ev.id) ?? 0
       const cost = costByEventId.get(ev.id) ?? costByDate.get(ev.date)
       return {
+        eventId: ev.id,
         name: ev.name,
         date: ev.date,
         target: cost?.targetCount ?? 0,
