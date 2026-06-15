@@ -32,7 +32,7 @@ function ParticipantModal({
 
   if (!participants && !loading) {
     setLoading(true)
-    fetch(`/api/admin/event-registrations?eventId=${eventId}&eventDate=${eventDate}`)
+    fetch(`/api/admin/event-registrations?eventId=${encodeURIComponent(eventId)}&eventDate=${encodeURIComponent(eventDate)}`)
       .then(r => r.json())
       .then(d => { setParticipants(d.participants ?? []); setLoading(false) })
   }

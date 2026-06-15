@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   }
 
   const eventId = req.nextUrl.searchParams.get('eventId')
-  const eventDate = req.nextUrl.searchParams.get('eventDate') // YYYY-MM
+  const eventDate = req.nextUrl.searchParams.get('eventDate') // YYYY-MM-DD
   if (!eventId || !eventDate) {
     return NextResponse.json({ error: 'Missing params' }, { status: 400 })
   }
@@ -19,12 +19,12 @@ export async function GET(req: NextRequest) {
   // 找出此活動的報名者
   const eventRegs = active.filter(r => r.eventId === eventId)
 
-  // 判斷回流：此月前曾參加過任何活動的 email 集合
-  const currentMonth = eventDate.slice(0, 7) // YYYY-MM
+  // 判斷回流：這場活動日期之前，曾參加過其他活動的 email
   const returningEmails = new Set<string>()
   for (const r of active) {
-    const regMonth = r.registrationDate.slice(0, 7)
-    if (regMonth < currentMonth) {
+    if (r.eventId === eventId) continue // 排除本場
+    const regDate = r.registrationDate.slice(0, 10)
+    if (regDate < eventDate) {
       returningEmails.add(r.memberEmail)
     }
   }
