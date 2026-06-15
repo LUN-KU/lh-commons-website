@@ -30,13 +30,27 @@ function NotifyButton() {
       alert(`已發送 ${data.sent} 封提醒信！\n活動：${data.events?.join('、')}`)
     }
   }
-
   return (
-    <button
-      onClick={trigger}
-      className="text-sm bg-brand-100 text-brand-700 px-4 py-2 rounded-lg hover:bg-brand-200 transition-colors"
-    >
+    <button onClick={trigger} className="text-sm bg-brand-100 text-brand-700 px-4 py-2 rounded-lg hover:bg-brand-200 transition-colors">
       手動觸發 3 天提醒
+    </button>
+  )
+}
+
+function SyncButton() {
+  async function sync() {
+    const res = await fetch('/api/admin/sync-events', { method: 'POST' })
+    const data = await res.json()
+    if (data.created === 0) {
+      alert('所有活動已同步，無需更新')
+    } else {
+      alert(`同步完成！新增 ${data.created} 筆活動到品牌損益追蹤`)
+      window.location.reload()
+    }
+  }
+  return (
+    <button onClick={sync} className="text-sm bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors">
+      同步活動到損益表
     </button>
   )
 }
@@ -48,7 +62,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
   return (
     <div className="space-y-8">
       {/* Header actions */}
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <SyncButton />
         <NotifyButton />
       </div>
 
@@ -159,7 +174,7 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
 
       {/* P&L table */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-brand-800 mb-4">活動損益明細</h2>
+        <h2 className="text-base font-semibold text-brand-800 mb-4">品牌損益明細</h2>
         {plData.length === 0 ? (
           <p className="text-gray-400 text-sm py-4 text-center">尚無資料</p>
         ) : (
@@ -167,7 +182,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-gray-500 text-left">
-                  <th className="pb-2 font-medium">活動名稱</th>
+                  <th className="pb-2 font-medium">名稱</th>
+                  <th className="pb-2 font-medium">類別</th>
                   <th className="pb-2 font-medium text-right">日期</th>
                   <th className="pb-2 font-medium text-right">收入</th>
                   <th className="pb-2 font-medium text-right">成本</th>
@@ -178,10 +194,17 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
               <tbody>
                 {plData.map((row, i) => (
                   <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-2.5 max-w-[200px] truncate">{row.name}</td>
+                    <td className="py-2.5 max-w-[180px] truncate">{row.name}</td>
+                    <td className="py-2.5">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        row.category === '活動' ? 'bg-blue-50 text-blue-600' :
+                        row.category === '個人服務' ? 'bg-purple-50 text-purple-600' :
+                        'bg-gray-100 text-gray-500'
+                      }`}>{row.category}</span>
+                    </td>
                     <td className="py-2.5 text-right text-gray-500 text-xs">{row.date}</td>
                     <td className="py-2.5 text-right">{row.revenue > 0 ? `$${fmt(row.revenue)}` : '-'}</td>
-                    <td className="py-2.5 text-right text-gray-600">${fmt(row.cost)}</td>
+                    <td className="py-2.5 text-right text-gray-600">{row.cost > 0 ? `$${fmt(row.cost)}` : '-'}</td>
                     <td className={`py-2.5 text-right font-medium ${row.netProfit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                       {row.netProfit >= 0 ? '+' : ''}{`$${fmt(row.netProfit)}`}
                     </td>

@@ -18,6 +18,8 @@ export type Registration = {
 export type CostRecord = {
   id: string
   name: string
+  category: '活動' | '個人服務' | '其他'
+  eventId: string | null
   eventDate: string
   targetCount: number
   totalCost: number
@@ -40,6 +42,7 @@ export type DashboardStats = {
   plData: {
     name: string
     date: string
+    category: string
     cost: number
     revenue: number
     netProfit: number
@@ -115,6 +118,8 @@ export async function getCostRecords(): Promise<CostRecord[]> {
     return {
       id: page.id,
       name: getProp(p['活動名稱'], 'text') as string,
+      category: (getProp(p['類別'], 'text') as string || '活動') as CostRecord['category'],
+      eventId: getProp(p['活動ID'], 'text') as string || null,
       eventDate: getProp(p['活動日期'], 'date') as string,
       targetCount: getProp(p['目標人數'], 'number') as number,
       totalCost,
@@ -160,6 +165,45 @@ export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap
   return { events, dateMap }
 }
 
+// 自動把活動資料庫的活動同步到品牌損益追蹤（若已存在則跳過）
+export async function syncEventsToBrandPL(): Promise<{ created: number; skipped: number }> {
+  const { events } = await getEventsWithMap()
+
+  // 取得已存在的活動ID清單
+  const existing: any = await notion.databases.query({
+    database_id: COST_TABLE_DB,
+    page_size: 100,
+    filter: { property: '類別', select: { equals: '活動' } },
+  })
+  const existingEventIds = new Set(
+    (existing.results as any[])
+      .map((p: any) => p.properties['活動ID']?.rich_text?.[0]?.plain_text)
+      .filter(Boolean)
+  )
+
+  let created = 0
+  let skipped = 0
+
+  for (const ev of events) {
+    if (existingEventIds.has(ev.id)) {
+      skipped++
+      continue
+    }
+    await notion.pages.create({
+      parent: { database_id: COST_TABLE_DB },
+      properties: {
+        '活動名稱': { title: [{ text: { content: ev.name } }] },
+        '活動日期': { date: { start: ev.date } },
+        '類別': { select: { name: '活動' } },
+        '活動ID': { rich_text: [{ text: { content: ev.id } }] },
+      },
+    })
+    created++
+  }
+
+  return { created, skipped }
+}
+
 export async function getUpcomingEvents(daysAhead: number) {
   const target = new Date()
   target.setDate(target.getDate() + daysAhead)
@@ -194,17 +238,19 @@ export function computeStats(
   }
 
   // Cost records keyed by date for quick lookup
+  // Cost records keyed by eventId (精準比對) 和 date (fallback)
+  const costByEventId = new Map<string, CostRecord>()
   const costByDate = new Map<string, CostRecord>()
   for (const c of costRecords) {
+    if (c.eventId) costByEventId.set(c.eventId, c)
     if (c.eventDate) costByDate.set(c.eventDate.slice(0, 10), c)
   }
 
-  // Achievement rate — all events as primary source, cost records as supplement
+  // Achievement rate — all events as primary source
   const achievementData = events
-    .slice(0, 20)
     .map(ev => {
       const actual = byEventId.get(ev.id) ?? 0
-      const cost = costByDate.get(ev.date)
+      const cost = costByEventId.get(ev.id) ?? costByDate.get(ev.date)
       return {
         name: ev.name,
         date: ev.date,
@@ -218,23 +264,23 @@ export function computeStats(
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 12)
 
-  // P&L — events as primary, fill in cost data where available
-  const plData = events
-    .map(ev => {
-      const cost = costByDate.get(ev.date)
-      if (!cost) return null
+  // Brand P&L — all cost records (活動 + 個人服務 + 其他)
+  const plData = costRecords
+    .map(c => {
+      // 活動類別：用 event 名稱（比 cost record 的名稱更新）
+      const ev = c.eventId ? events.find(e => e.id === c.eventId) : null
       return {
-        name: ev.name,
-        date: ev.date,
-        cost: cost.totalCost,
-        revenue: cost.totalRevenue,
-        netProfit: cost.netProfit,
-        grossMargin: cost.grossMargin ?? '-',
+        name: ev?.name ?? c.name,
+        date: c.eventDate,
+        category: c.category,
+        cost: c.totalCost,
+        revenue: c.totalRevenue,
+        netProfit: c.netProfit,
+        grossMargin: c.grossMargin ?? '-',
       }
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 12)
+    .slice(0, 20)
 
   // Monthly revenue (last 12 months)
   const monthRevMap = new Map<string, number>()
