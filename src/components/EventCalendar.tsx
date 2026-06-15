@@ -64,7 +64,7 @@ export default function EventCalendar({
   const statusDot: Record<string, string> = {
     '報名中': 'bg-green-400',
     '額滿': 'bg-orange-400',
-    '已結束': 'bg-gray-300',
+    '已結束': 'bg-gray-500',
   }
 
   return (
@@ -117,7 +117,7 @@ export default function EventCalendar({
       <div className="flex gap-4 mt-4 pt-4 border-t border-brand-100 text-xs text-brand-400">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />報名中</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />額滿</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />已結束</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block" />已結束</span>
       </div>
 
       {/* Selected day events */}
