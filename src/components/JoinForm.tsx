@@ -5,10 +5,12 @@ import PaymentInstructions from './PaymentInstructions'
 const INTERESTS = ['讀書會', '一日遊', '桌遊', '派對', '運動', '專業講座', '興趣培養', '活動揪團', '包團出國']
 
 type MemberType = 'regular' | 'senior'
+type SeniorPlan = '1.0' | '2.0'
 type FormState = 'idle' | 'submitting' | 'success' | 'duplicate' | 'error'
 
 export default function JoinForm({ defaultType = 'regular' }: { defaultType?: MemberType }) {
   const [memberType, setMemberType] = useState<MemberType>(defaultType)
+  const [seniorPlan, setSeniorPlan] = useState<SeniorPlan>('1.0')
   const [formState, setFormState] = useState<FormState>('idle')
 
   const [name, setName] = useState('')
@@ -33,6 +35,8 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
     ? [...interests, `其他：${otherInterest.trim()}`]
     : interests
 
+  const planPrice = seniorPlan === '1.0' ? 720 : 1980
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormState('submitting')
@@ -42,6 +46,7 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: memberType === 'senior' ? 'senior' : 'regular',
+          seniorPlan: memberType === 'senior' ? seniorPlan : undefined,
           name, nickname, gender, birthday, ig, email, phone,
           interests: allInterests,
           bankCode,
@@ -99,21 +104,54 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
         </button>
       </div>
 
-      {/* 說明 */}
+      {/* 資深里民：方案選擇 */}
       {memberType === 'senior' && (
-        <div className="bg-amber-500/20 border border-amber-400/30 rounded-2xl p-4 text-sm text-amber-100 space-y-1">
-          <p className="font-bold">資深里民四大福利 ✨</p>
-          <p>• 里民專屬活動優惠價</p>
-          <p>• 合作店家、老師專屬折扣</p>
-          <p>• 私密線下聚會（非資深不得參加）</p>
-          <p>• 不定期驚喜好禮</p>
-          <p className="pt-1 font-semibold">費用：匯款 $588 至領航里（後5碼填於下方）</p>
+        <div className="space-y-3">
+          {/* 方案一 */}
+          <button type="button"
+            onClick={() => setSeniorPlan('1.0')}
+            className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${seniorPlan === '1.0' ? 'border-amber-400 bg-amber-500/20' : 'border-white/15 bg-white/5 hover:border-white/30'}`}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <span className={`text-xs font-bold uppercase tracking-widest ${seniorPlan === '1.0' ? 'text-amber-300' : 'text-white/40'}`}>方案一</span>
+                <p className="font-black text-white text-base">資深里民 1.0 <span className="text-sm font-normal text-white/60">社交連結型</span></p>
+              </div>
+              <span className="font-black text-white text-lg shrink-0">$720</span>
+            </div>
+            <ul className="text-xs text-white/60 space-y-0.5">
+              <li>· 里民專屬活動優惠價</li>
+              <li>· 合作活動、老師、店家專屬折扣</li>
+              <li>· 私密線下聚會（非資深不得參加）</li>
+              <li>· 不定期驚喜好禮、優惠禮券</li>
+            </ul>
+          </button>
+
+          {/* 方案二 */}
+          <button type="button"
+            onClick={() => setSeniorPlan('2.0')}
+            className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${seniorPlan === '2.0' ? 'border-brand-400 bg-brand-600/25' : 'border-white/15 bg-white/5 hover:border-white/30'}`}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <span className={`text-xs font-bold uppercase tracking-widest ${seniorPlan === '2.0' ? 'text-brand-300' : 'text-white/40'}`}>方案二</span>
+                <p className="font-black text-white text-base">理想領航員 2.0 <span className="text-sm font-normal text-white/60">專業成長型</span></p>
+              </div>
+              <span className="font-black text-white text-lg shrink-0">$1,980</span>
+            </div>
+            <ul className="text-xs text-white/60 space-y-0.5">
+              <li>· 包含 1.0 全部福利</li>
+              <li>· 全年活動最優先保留位 + 3 次主題許願權</li>
+              <li>· 1hr 理想生活復盤（設計思考 × 里長）</li>
+              <li>· 1hr 專業財務諮詢（顧問式資產盤點）</li>
+              <li className="text-amber-300/70">⚠️ 全年度限額開放</li>
+            </ul>
+          </button>
         </div>
       )}
 
       <div className="bg-white rounded-3xl p-6 space-y-5">
 
-        {/* 基本資料 */}
         <Field label="真實姓名" required>
           <input type="text" value={name} onChange={e => setName(e.target.value)} required
             placeholder="請輸入真實姓名" className={inputCls} />
@@ -160,7 +198,6 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
             placeholder="09xxxxxxxx" className={inputCls} />
         </Field>
 
-        {/* 感興趣活動 */}
         <Field label="你感興趣的活動？" hint="可複選，每月有相關活動時會提醒你" required>
           <div className="flex flex-wrap gap-2">
             {INTERESTS.map(item => (
@@ -177,15 +214,14 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
           <input type="hidden" value={allInterests.join(',')} required={allInterests.length === 0 ? true : undefined} />
         </Field>
 
-        {/* 資深里民專屬 */}
         {memberType === 'senior' && (
-          <PaymentInstructions theme="light" />
-        )}
-        {memberType === 'senior' && (
-          <Field label="匯款後五碼" hint="匯款 $588 後填入帳號後5碼" required>
-            <input type="text" value={bankCode} onChange={e => setBankCode(e.target.value)} required
-              maxLength={5} placeholder="12345" className={inputCls} />
-          </Field>
+          <>
+            <PaymentInstructions theme="light" planAmount={planPrice} />
+            <Field label="匯款後五碼" hint={`匯款 $${planPrice.toLocaleString()} 後填入帳號後5碼`} required>
+              <input type="text" value={bankCode} onChange={e => setBankCode(e.target.value)} required
+                maxLength={5} placeholder="12345" className={inputCls} />
+            </Field>
+          </>
         )}
 
         <Field label={memberType === 'senior' ? '想對領航里說什麼' : '想對領航里說什麼（選填）'}
@@ -205,7 +241,11 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
         <button type="submit" disabled={formState === 'submitting' || allInterests.length === 0 || !gender}
           className="w-full bg-brand-600 text-white font-bold py-4 rounded-2xl hover:bg-brand-700 transition-colors disabled:opacity-50 text-base"
         >
-          {formState === 'submitting' ? '送出中...' : memberType === 'senior' ? '申請成為資深里民' : '申請成為一般里民'}
+          {formState === 'submitting'
+            ? '送出中...'
+            : memberType === 'senior'
+              ? `申請${seniorPlan === '2.0' ? '理想領航員 2.0' : '資深里民 1.0'}`
+              : '申請成為一般里民'}
         </button>
 
         <p className="text-xs text-gray-400 text-center">

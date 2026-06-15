@@ -1,12 +1,13 @@
 import { Client } from '@notionhq/client'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendJoinNotification } from '@/lib/email'
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const MEMBERS_DB_ID = process.env.NOTION_MEMBERS_DATABASE_ID!
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { type, name, nickname, gender, birthday, ig, email, phone, interests, bankCode, note } = body
+  const { type, seniorPlan, name, nickname, gender, birthday, ig, email, phone, interests, bankCode, note } = body
 
   if (!name || !nickname || !gender || !email || !phone || !interests?.length || !type) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -24,6 +25,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ duplicate: true })
   }
 
+  // 備註加入方案資訊
+  const planLabel = type === 'senior'
+    ? (seniorPlan === '2.0' ? '【理想領航員 2.0】' : '【資深里民 1.0】')
+    : ''
+  const fullNote = planLabel ? `${planLabel}\n${note || ''}`.trim() : (note || '')
+
   const properties: Record<string, unknown> = {
     '姓名': { title: [{ text: { content: name } }] },
     'Email': { email },
@@ -32,10 +39,11 @@ export async function POST(req: NextRequest) {
     'IG帳號': { rich_text: [{ text: { content: ig || '無' } }] },
     '電話': { rich_text: [{ text: { content: phone } }] },
     '感興趣活動': { rich_text: [{ text: { content: interests.join('、') } }] },
-    '備註': { rich_text: [{ text: { content: note || '' } }] },
+    '備註': { rich_text: [{ text: { content: fullNote } }] },
     '申請時間': { date: { start: new Date().toISOString() } },
     '狀態': { select: { name: '待審核' } },
     '身份': { select: { name: type === 'senior' ? '資深里民' : '一般里民' } },
+    '排序': { number: type === 'senior' ? 1 : 3 },
   }
 
   if (birthday) {
@@ -49,6 +57,9 @@ export async function POST(req: NextRequest) {
     parent: { database_id: MEMBERS_DB_ID },
     properties: properties as Parameters<typeof notion.pages.create>[0]['properties'],
   })
+
+  // 發通知給管理員（non-blocking）
+  sendJoinNotification({ name, email, phone, type, seniorPlan, bankCode, ig, interests, note }).catch(console.error)
 
   return NextResponse.json({ ok: true })
 }
