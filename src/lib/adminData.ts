@@ -4,7 +4,7 @@ const notion = new Client({ auth: process.env.NOTION_TOKEN })
 
 const REGISTRATIONS_DB = process.env.NOTION_REGISTRATIONS_DATABASE_ID!
 const EVENTS_DB = process.env.NOTION_DATABASE_ID!
-const COST_TABLE_DB = '1c76dc6e-c222-8124-8925-f3c7f8896242'
+const COST_TABLE_DB = '3806dc6e-c222-815c-9984-d8714f482a77'
 
 export type Registration = {
   eventId: string
@@ -20,10 +20,11 @@ export type CostRecord = {
   name: string
   eventDate: string
   targetCount: number
-  costPreTax: number
-  netProfit: number | null
+  totalCost: number
+  totalRevenue: number
+  netProfit: number
   grossMargin: string | null
-  memberRevenue: number | null
+  note: string
 }
 
 export type DashboardStats = {
@@ -34,6 +35,7 @@ export type DashboardStats = {
     actual: number
     rate: number | null
     matched: boolean
+    hasCost: boolean
   }[]
   plData: {
     name: string
@@ -103,22 +105,37 @@ export async function getCostRecords(): Promise<CostRecord[]> {
 
   return (res.results as any[]).map((page: any) => {
     const p = page.properties
+    const totalCost = getProp(p['總成本'], 'number') as number
+    const totalRevenue = getProp(p['總收入'], 'number') as number
+    const netProfit = totalRevenue - totalCost
+    const grossMargin = totalRevenue > 0
+      ? `${Math.round((netProfit / totalRevenue) * 1000) / 10}%`
+      : null
+
     return {
       id: page.id,
-      name: getProp(p['項目'], 'text') as string,
+      name: getProp(p['活動名稱'], 'text') as string,
       eventDate: getProp(p['活動日期'], 'date') as string,
-      targetCount: getProp(p['人數'], 'number') as number,
-      costPreTax: getProp(p['✏總成本（未稅）'], 'number') as number,
-      netProfit: p['淨利']?.formula?.number ?? null,
-      grossMargin: p['毛利率（%）']?.formula?.string ?? null,
-      memberRevenue: p['總收入（會員）']?.formula?.number ?? null,
+      targetCount: getProp(p['目標人數'], 'number') as number,
+      totalCost,
+      totalRevenue,
+      netProfit,
+      grossMargin,
+      note: getProp(p['備註'], 'text') as string,
     }
   })
 }
 
-// 取得所有活動的 日期 → eventId 對應表（用於自動比對達成率）
-export async function getEventDateMap(): Promise<Map<string, string>> {
-  const map = new Map<string, string>()
+export type EventInfo = {
+  id: string
+  name: string
+  date: string
+}
+
+// 取得所有活動（含名稱），同時建立 日期→活動 對應表
+export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap: Map<string, EventInfo> }> {
+  const events: EventInfo[] = []
+  const dateMap = new Map<string, EventInfo>()
   let cursor: string | undefined
 
   do {
@@ -126,15 +143,21 @@ export async function getEventDateMap(): Promise<Map<string, string>> {
       database_id: EVENTS_DB,
       page_size: 100,
       start_cursor: cursor,
+      sorts: [{ property: '日期', direction: 'descending' }],
     })
     for (const page of res.results as any[]) {
       const date = page.properties['日期']?.date?.start?.slice(0, 10)
-      if (date) map.set(date, page.id)
+      const name = page.properties['活動名稱']?.title?.map((t: any) => t.plain_text).join('') ?? ''
+      if (date && name) {
+        const ev: EventInfo = { id: page.id, name, date }
+        events.push(ev)
+        dateMap.set(date, ev)
+      }
     }
     cursor = res.has_more ? res.next_cursor : undefined
   } while (cursor)
 
-  return map
+  return { events, dateMap }
 }
 
 export async function getUpcomingEvents(daysAhead: number) {
@@ -159,7 +182,8 @@ export async function getUpcomingEvents(daysAhead: number) {
 export function computeStats(
   registrations: Registration[],
   costRecords: CostRecord[],
-  eventDateMap: Map<string, string>
+  events: EventInfo[],
+  dateMap: Map<string, EventInfo>
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
@@ -169,43 +193,53 @@ export function computeStats(
     byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
   }
 
-  // Achievement rate — auto-match cost record date to event ID
-  const achievementData = costRecords
-    .filter(c => c.eventDate)
-    .map(c => {
-      const dateKey = c.eventDate.slice(0, 10)
-      const eventId = eventDateMap.get(dateKey)
-      const actual = eventId ? (byEventId.get(eventId) ?? 0) : 0
+  // Cost records keyed by date for quick lookup
+  const costByDate = new Map<string, CostRecord>()
+  for (const c of costRecords) {
+    if (c.eventDate) costByDate.set(c.eventDate.slice(0, 10), c)
+  }
+
+  // Achievement rate — all events as primary source, cost records as supplement
+  const achievementData = events
+    .slice(0, 20)
+    .map(ev => {
+      const actual = byEventId.get(ev.id) ?? 0
+      const cost = costByDate.get(ev.date)
       return {
-        name: c.name,
-        date: c.eventDate,
-        target: c.targetCount,
+        name: ev.name,
+        date: ev.date,
+        target: cost?.targetCount ?? 0,
         actual,
-        rate: c.targetCount > 0 ? Math.round((actual / c.targetCount) * 100) : null,
-        matched: !!eventId,
+        rate: cost?.targetCount ? Math.round((actual / cost.targetCount) * 100) : null,
+        matched: true,
+        hasCost: !!cost,
       }
     })
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 12)
 
-  // P&L
-  const plData = costRecords
-    .filter(c => c.eventDate)
-    .map(c => ({
-      name: c.name,
-      date: c.eventDate,
-      cost: c.costPreTax,
-      revenue: c.memberRevenue ?? 0,
-      netProfit: c.netProfit ?? 0,
-      grossMargin: c.grossMargin ?? '-',
-    }))
+  // P&L — events as primary, fill in cost data where available
+  const plData = events
+    .map(ev => {
+      const cost = costByDate.get(ev.date)
+      if (!cost) return null
+      return {
+        name: ev.name,
+        date: ev.date,
+        cost: cost.totalCost,
+        revenue: cost.totalRevenue,
+        netProfit: cost.netProfit,
+        grossMargin: cost.grossMargin ?? '-',
+      }
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 12)
 
   // Monthly revenue (last 12 months)
   const monthRevMap = new Map<string, number>()
   for (const c of costRecords) {
-    if (!c.eventDate || c.netProfit === null) continue
+    if (!c.eventDate) continue
     const month = c.eventDate.slice(0, 7)
     monthRevMap.set(month, (monthRevMap.get(month) ?? 0) + c.netProfit)
   }

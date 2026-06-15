@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getAllRegistrations, getCostRecords, getEventDateMap, computeStats } from '@/lib/adminData'
+import { getAllRegistrations, getCostRecords, getEventsWithMap, computeStats } from '@/lib/adminData'
 import DashboardCharts from './DashboardCharts'
 
 export const dynamic = 'force-dynamic'
@@ -11,13 +11,13 @@ export default async function DashboardPage() {
     redirect('/admin')
   }
 
-  const [registrations, costRecords, eventDateMap] = await Promise.all([
+  const [registrations, costRecords, { events, dateMap }] = await Promise.all([
     getAllRegistrations(),
     getCostRecords(),
-    getEventDateMap(),
+    getEventsWithMap(),
   ])
 
-  const stats = computeStats(registrations, costRecords, eventDateMap)
+  const stats = computeStats(registrations, costRecords, events, dateMap)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">

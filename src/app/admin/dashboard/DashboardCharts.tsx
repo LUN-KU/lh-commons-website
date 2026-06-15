@@ -113,9 +113,9 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-brand-800">活動達成率</h2>
-          {!hasMatch && (
+          {achievementData.length > 0 && !achievementData.some(a => a.hasCost) && (
             <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full">
-              確認活動成本預估表的「活動日期」欄位是否有填日期
+              請在 Notion「活動損益追蹤」填入各活動的成本與收入
             </span>
           )}
         </div>
@@ -148,8 +148,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                     />
                   </div>
                 )}
-                {!ev.matched && (
-                  <p className="text-xs text-gray-400 mt-2">找不到對應活動日期</p>
+                {!ev.hasCost && (
+                  <p className="text-xs text-gray-400 mt-2">損益尚未填入</p>
                 )}
               </div>
             ))}
