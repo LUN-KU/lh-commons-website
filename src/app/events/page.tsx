@@ -1,6 +1,5 @@
 import { getEvents } from '@/lib/notion'
-import EventsGrid from '@/components/EventsGrid'
-import EventCalendar from '@/components/EventCalendar'
+import EventsPageClient from '@/components/EventsPageClient'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
@@ -15,7 +14,7 @@ export default async function EventsPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
       <h1 className="text-3xl font-black text-white mb-1">活動行事曆＆報名</h1>
-      <p className="text-white/50 mb-6">每月 10–15 場，總有一場適合你</p>
+      <p className="text-white/50 mb-6">每月精彩活動，打造理想生活圈</p>
 
       {/* 加入里民入口 */}
       {!session && (
@@ -33,14 +32,7 @@ export default async function EventsPage() {
         </div>
       )}
 
-      {/* 月曆 */}
-      <div className="mb-12">
-        <EventCalendar events={visibleEvents} />
-      </div>
-
-      {/* 活動列表 */}
-      <h2 className="text-xl font-black text-white mb-6">所有活動</h2>
-      <EventsGrid events={visibleEvents} />
+      <EventsPageClient events={visibleEvents} />
     </div>
   )
 }
