@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getEvents, getSiteSettings, getActivityFeaturedImage } from '@/lib/notion'
+import { getEvents, getHomePageSettings, getActivityFeaturedImage } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
 
@@ -14,9 +14,9 @@ const SERVICES = [
 ]
 
 export default async function Home() {
-  const [allEvents, settings, featuredImage] = await Promise.all([
+  const [allEvents, homeSettings, featuredImage] = await Promise.all([
     getEvents(),
-    getSiteSettings(),
+    getHomePageSettings(),
     getActivityFeaturedImage(),
   ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
@@ -27,7 +27,7 @@ export default async function Home() {
       {/* ── Section 1: Intro ── */}
       <section className="max-w-5xl mx-auto px-6 pt-16 pb-14">
         <p className="text-white/65 text-base leading-relaxed max-w-3xl mb-16">
-          {settings.about || '領航里致力於帶領大家共同成長，透過舉辦多元化的同樂活動，促進彼此的交流與合作。我們相信，在這裡，成長不僅是個人的，更是大家攜手並進的旅程，讓每個人成為更好的自己。'}
+          {homeSettings.intro || '領航里致力於帶領大家共同成長，透過舉辦多元化的同樂活動，促進彼此的交流與合作。我們相信，在這裡，成長不僅是個人的，更是大家攜手並進的旅程，讓每個人成為更好的自己。'}
         </p>
 
         {/* Large display text */}
@@ -45,7 +45,7 @@ export default async function Home() {
           <div>
             <p className="text-white font-bold text-lg mb-3">領航里里民｜交流、學習、社交</p>
             <p className="text-white/55 text-sm leading-relaxed mb-4">
-              {settings.joinUs || '這裡是一個交流學習的平台，我們會舉辦各種活動包含學習讀書會、同樂桌遊、繪畫手作課程、烘焙料理、劇本殺密室等等，希望大家能在這裡找到可以一起前進成長的同伴。'}
+              {homeSettings.taglineDesc || '這裡是一個交流學習的平台，我們會舉辦各種活動包含學習讀書會、同樂桌遊、繪畫手作課程、烘焙料理、劇本殺密室等等，希望大家能在這裡找到可以一起前進成長的同伴。'}
             </p>
             <a
               href="https://www.instagram.com/l.h_commons"

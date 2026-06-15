@@ -70,8 +70,12 @@ export async function getEvents(): Promise<Event[]> {
   }))
 }
 
-// 網站設定頁面 ID
-const SETTINGS_PAGE_ID = '37a6dc6e-c222-807e-91f7-edbc0eb4cf14'
+// 關於我們頁面 ID（/about 使用）
+const ABOUT_PAGE_ID = '37a6dc6e-c222-807e-91f7-edbc0eb4cf14'
+// 首頁編輯頁面 ID（首頁 intro / tagline 說明使用）
+const HOMEPAGE_PAGE_ID = '3806dc6e-c222-806b-a56c-cef49ff3d130'
+// 合作專區頁面 ID（/collab 使用）
+const COLLAB_PAGE_ID = '3806dc6e-c222-80b1-8808-fad280da08c6'
 // 服務連結頁面 ID
 const LINKS_PAGE_ID = '37a6dc6e-c222-80ef-b8fb-ef384b935e3b'
 
@@ -89,10 +93,9 @@ export type SiteLink = {
   url: string
 }
 
-export async function getSiteSettings(): Promise<SiteSettings> {
-  const res = await notion.blocks.children.list({ block_id: SETTINGS_PAGE_ID })
+async function parseKeyValueBlocks(pageId: string): Promise<Record<string, string>> {
+  const res = await notion.blocks.children.list({ block_id: pageId })
   const blocks = res.results as any[]
-
   const map: Record<string, string> = {}
   let currentKey = ''
   for (const block of blocks) {
@@ -104,13 +107,30 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       currentKey = ''
     }
   }
+  return map
+}
 
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const map = await parseKeyValueBlocks(ABOUT_PAGE_ID)
   return {
     about: map['關於我們介紹'] ?? '',
     joinUs: map['加入我們說明'] ?? '',
     memberCount: map['里民人數'] ?? '700+',
     eventsPerMonth: map['每月活動場數'] ?? '10-15',
   }
+}
+
+export async function getHomePageSettings(): Promise<{ intro: string; taglineDesc: string }> {
+  const map = await parseKeyValueBlocks(HOMEPAGE_PAGE_ID)
+  return {
+    intro: map['首頁介紹'] ?? '',
+    taglineDesc: map['標語說明'] ?? '',
+  }
+}
+
+export async function getCollabBlocks(): Promise<NotionBlock[]> {
+  const res = await notion.blocks.children.list({ block_id: COLLAB_PAGE_ID, page_size: 100 })
+  return res.results as NotionBlock[]
 }
 
 export async function getSiteLinks(): Promise<SiteLink[]> {
