@@ -4,6 +4,7 @@ const notion = new Client({ auth: process.env.NOTION_TOKEN })
 
 const REGISTRATIONS_DB = process.env.NOTION_REGISTRATIONS_DATABASE_ID!
 const EVENTS_DB = process.env.NOTION_DATABASE_ID!
+const MEMBERS_DB = process.env.NOTION_MEMBERS_DATABASE_ID!
 const COST_TABLE_DB = '3806dc6e-c222-815c-9984-d8714f482a77'
 
 export type Registration = {
@@ -132,13 +133,47 @@ export async function getCostRecords(): Promise<CostRecord[]> {
   })
 }
 
+function parseFee(text: string): number {
+  const match = text.replace(/,/g, '').match(/\d+/)
+  return match ? parseInt(match[0]) : 0
+}
+
 export type EventInfo = {
   id: string
   name: string
   date: string
+  feeGeneral: number   // 一般里民費用
+  feeSenior: number    // 資深里民費用
+  feeEarly: number     // 早鳥里民費用
 }
 
-// 取得所有活動（含名稱），同時建立 日期→活動 對應表
+export type MemberInfo = {
+  email: string
+  memberType: '一般里民' | '資深里民'
+}
+
+// 取得所有會員身份 email → memberType
+export async function getAllMembers(): Promise<Map<string, '一般里民' | '資深里民'>> {
+  const map = new Map<string, '一般里民' | '資深里民'>()
+  let cursor: string | undefined
+  do {
+    const res: any = await notion.databases.query({
+      database_id: MEMBERS_DB,
+      page_size: 100,
+      start_cursor: cursor,
+      filter: { property: '狀態', select: { equals: '啟用' } },
+    })
+    for (const page of res.results as any[]) {
+      const email = page.properties['Email']?.email ?? ''
+      const type = page.properties['身份']?.select?.name ?? '一般里民'
+      if (email) map.set(email, type as '一般里民' | '資深里民')
+    }
+    cursor = res.has_more ? res.next_cursor : undefined
+  } while (cursor)
+  return map
+}
+
+// 取得所有活動（含費用），同時建立 日期→活動 對應表
 export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap: Map<string, EventInfo> }> {
   const events: EventInfo[] = []
   const dateMap = new Map<string, EventInfo>()
@@ -152,10 +187,18 @@ export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap
       sorts: [{ property: '日期', direction: 'descending' }],
     })
     for (const page of res.results as any[]) {
-      const date = page.properties['日期']?.date?.start?.slice(0, 10)
-      const name = page.properties['活動名稱']?.title?.map((t: any) => t.plain_text).join('') ?? ''
+      const p = page.properties
+      const date = p['日期']?.date?.start?.slice(0, 10)
+      const name = p['活動名稱']?.title?.map((t: any) => t.plain_text).join('') ?? ''
       if (date && name) {
-        const ev: EventInfo = { id: page.id, name, date }
+        const ev: EventInfo = {
+          id: page.id,
+          name,
+          date,
+          feeGeneral: parseFee(p['一般里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
+          feeSenior: parseFee(p['資深里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
+          feeEarly: parseFee(p['早鳥里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
+        }
         events.push(ev)
         dateMap.set(date, ev)
       }

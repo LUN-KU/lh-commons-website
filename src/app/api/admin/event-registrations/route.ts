@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllRegistrations } from '@/lib/adminData'
+import { getAllRegistrations, getAllMembers, getEventsWithMap } from '@/lib/adminData'
 
 export async function GET(req: NextRequest) {
   const cookie = req.cookies.get('lh_admin')?.value
@@ -14,31 +14,62 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing params' }, { status: 400 })
   }
 
-  const allRegistrations = await getAllRegistrations()
+  const [allRegistrations, memberMap, { events }] = await Promise.all([
+    getAllRegistrations(),
+    getAllMembers(),
+    getEventsWithMap(),
+  ])
+
+  // 找到本場活動的費用設定
+  const ev = events.find(e => e.id === eventId) ?? events.find(e => e.name === eventName)
+
   const active = allRegistrations.filter(r => r.status === '已報名')
 
-  // 找出此活動的報名者（精準比對 eventId，fallback 到 eventName）
+  // 找出此活動的報名者
   const eventRegs = active.filter(r =>
     r.eventId ? r.eventId === eventId : r.eventName === eventName
   )
 
-  // 判斷回流：這場活動日期之前，曾參加過其他活動的 email
+  // 判斷回流
   const returningEmails = new Set<string>()
   for (const r of active) {
     const isSameEvent = r.eventId ? r.eventId === eventId : r.eventName === eventName
     if (isSameEvent) continue
-    const regDate = r.registrationDate.slice(0, 10)
-    if (regDate < eventDate) {
+    const regDate = r.registrationDate?.slice(0, 10) ?? ''
+    if (regDate && regDate < eventDate) {
       returningEmails.add(r.memberEmail)
     }
   }
 
-  const participants = eventRegs.map(r => ({
-    name: r.memberName,
-    email: r.memberEmail,
-    registrationDate: r.registrationDate,
-    isReturning: returningEmails.has(r.memberEmail),
-  }))
+  let calculatedRevenue = 0
+  const hasFees = ev && (ev.feeGeneral > 0 || ev.feeSenior > 0)
 
-  return NextResponse.json({ participants })
+  const participants = eventRegs.map(r => {
+    const memberType = memberMap.get(r.memberEmail) ?? '一般里民'
+    let fee = 0
+    if (ev) {
+      fee = memberType === '資深里民' && ev.feeSenior > 0
+        ? ev.feeSenior
+        : ev.feeGeneral > 0
+          ? ev.feeGeneral
+          : 0
+    }
+    if (hasFees) calculatedRevenue += fee
+
+    return {
+      name: r.memberName,
+      email: r.memberEmail,
+      registrationDate: r.registrationDate,
+      isReturning: returningEmails.has(r.memberEmail),
+      memberType,
+      fee,
+    }
+  })
+
+  return NextResponse.json({
+    participants,
+    calculatedRevenue: hasFees ? calculatedRevenue : null,
+    feeGeneral: ev?.feeGeneral ?? 0,
+    feeSenior: ev?.feeSenior ?? 0,
+  })
 }

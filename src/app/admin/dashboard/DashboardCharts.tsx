@@ -16,6 +16,8 @@ type Participant = {
   email: string
   registrationDate: string
   isReturning: boolean
+  memberType: '一般里民' | '資深里民'
+  fee: number
 }
 
 type MemberHistory = { eventName: string; eventDate: string }
@@ -70,6 +72,7 @@ function ParticipantModal({
   onClose: () => void
 }) {
   const [participants, setParticipants] = useState<Participant[] | null>(null)
+  const [calculatedRevenue, setCalculatedRevenue] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [memberModal, setMemberModal] = useState<{ name: string; email: string } | null>(null)
 
@@ -77,11 +80,17 @@ function ParticipantModal({
     setLoading(true)
     fetch(`/api/admin/event-registrations?eventId=${encodeURIComponent(eventId)}&eventDate=${encodeURIComponent(eventDate)}&eventName=${encodeURIComponent(eventName)}`)
       .then(r => r.json())
-      .then(d => { setParticipants(d.participants ?? []); setLoading(false) })
+      .then(d => {
+        setParticipants(d.participants ?? [])
+        setCalculatedRevenue(d.calculatedRevenue ?? null)
+        setLoading(false)
+      })
   }
 
   const returningCount = participants?.filter(p => p.isReturning).length ?? 0
   const newCount = (participants?.length ?? 0) - returningCount
+  const seniorCount = participants?.filter(p => p.memberType === '資深里民').length ?? 0
+  const generalCount = (participants?.length ?? 0) - seniorCount
 
   return (
     <>
@@ -103,10 +112,21 @@ function ParticipantModal({
               <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
             {participants && (
-              <div className="flex gap-3 mt-3">
-                <span className="text-xs bg-brand-50 text-brand-700 px-3 py-1 rounded-full">共 {participants.length} 人</span>
-                {returningCount > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">回流 {returningCount} 人</span>}
-                {newCount > 0 && <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">新里民 {newCount} 人</span>}
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs bg-brand-50 text-brand-700 px-3 py-1 rounded-full">共 {participants.length} 人</span>
+                  {returningCount > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">回流 {returningCount} 人</span>}
+                  {newCount > 0 && <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">新里民 {newCount} 人</span>}
+                  {seniorCount > 0 && <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">資深 {seniorCount} 人</span>}
+                  {generalCount > 0 && <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">一般 {generalCount} 人</span>}
+                </div>
+                {calculatedRevenue !== null && (
+                  <div className="flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2">
+                    <span className="text-xs text-green-600">預估收入</span>
+                    <span className="text-base font-bold text-green-700">${fmt(calculatedRevenue)}</span>
+                    <span className="text-xs text-gray-400 ml-auto">依報名費自動加總</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -125,10 +145,15 @@ function ParticipantModal({
                         <p className="text-sm font-medium text-gray-800 underline decoration-dotted underline-offset-2">{p.name}</p>
                         <p className="text-xs text-gray-400">{p.email}</p>
                       </button>
-                      {p.isReturning
-                        ? <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0">回流里民</span>
-                        : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">新里民</span>
-                      }
+                      <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                        {p.isReturning
+                          ? <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">回流里民</span>
+                          : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">新里民</span>
+                        }
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${p.memberType === '資深里民' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {p.memberType}{p.fee > 0 ? ` $${fmt(p.fee)}` : ''}
+                        </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
