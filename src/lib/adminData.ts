@@ -300,20 +300,31 @@ export function computeStats(
     .slice(-12)
     .map(([month, revenue]) => ({ month, revenue }))
 
-  // Return rate — 以每筆報名為單位計算（同月份多次參加也能算回流）
-  // 按報名時間排序，第一次出現 = 新里民，之後每筆 = 回流
+  // Return rate — 以每筆報名為單位計算
+  // 用活動日期（eventId→date 或 eventName→date）當時間基準，因為舊資料報名時間為空
+  const eventIdToDate = new Map<string, string>(events.map(e => [e.id, e.date]))
+  const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
+
+  function getEffectiveDate(r: Registration): string {
+    if (r.registrationDate) return r.registrationDate.slice(0, 10)
+    if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
+    if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
+    return ''
+  }
+
   const memberSeen = new Set<string>()
   const returnRateByMonth = new Map<string, { new: number; returning: number }>()
 
   const sortedActive = [...active].sort((a, b) => {
-    const da = a.registrationDate || '9999'
-    const db = b.registrationDate || '9999'
+    const da = getEffectiveDate(a) || '9999'
+    const db = getEffectiveDate(b) || '9999'
     return da.localeCompare(db)
   })
 
   for (const r of sortedActive) {
-    const month = r.registrationDate ? r.registrationDate.slice(0, 7) : null
-    if (!month) continue
+    const date = getEffectiveDate(r)
+    if (!date) continue
+    const month = date.slice(0, 7)
     if (!returnRateByMonth.has(month)) returnRateByMonth.set(month, { new: 0, returning: 0 })
     const bucket = returnRateByMonth.get(month)!
     if (memberSeen.has(r.memberEmail)) {

@@ -22,15 +22,14 @@ export async function GET(req: NextRequest) {
     .filter(r => r.memberEmail === email && r.status === '已報名')
     .map(r => {
       const ev = r.eventId ? eventMap.get(r.eventId) : nameMap.get(r.eventName)
-      const eventDate = ev?.date ?? r.registrationDate.slice(0, 10)
+      // 優先用活動日期，沒有才用報名時間，都沒有就留空
+      const eventDate = ev?.date ?? r.registrationDate?.slice(0, 10) ?? ''
       return {
         eventName: ev?.name ?? r.eventName,
         eventDate,
-        registrationDate: r.registrationDate,
       }
     })
-    // 用活動日期做6個月截止，而不是報名時間（報名時間可能是空的）
-    .filter(h => !h.eventDate || h.eventDate >= cutoff)
+    .filter(h => h.eventDate >= cutoff)
     .sort((a, b) => b.eventDate.localeCompare(a.eventDate))
 
   return NextResponse.json({ email, history })
