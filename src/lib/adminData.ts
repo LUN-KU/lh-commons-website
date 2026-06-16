@@ -232,13 +232,17 @@ export function computeStats(
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
-  // Group active registrations by event ID
+  // Group active registrations by event ID (精準) 和 event name (備援給 eventId 為空的舊資料)
   const byEventId = new Map<string, number>()
+  const byEventName = new Map<string, number>()
   for (const r of active) {
-    byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
+    if (r.eventId) {
+      byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
+    } else if (r.eventName) {
+      byEventName.set(r.eventName, (byEventName.get(r.eventName) ?? 0) + 1)
+    }
   }
 
-  // Cost records keyed by date for quick lookup
   // Cost records keyed by eventId (精準比對) 和 date (fallback)
   const costByEventId = new Map<string, CostRecord>()
   const costByDate = new Map<string, CostRecord>()
@@ -250,7 +254,7 @@ export function computeStats(
   // Achievement rate — all events as primary source
   const achievementData = events
     .map(ev => {
-      const actual = byEventId.get(ev.id) ?? 0
+      const actual = byEventId.get(ev.id) ?? byEventName.get(ev.name) ?? 0
       const cost = costByEventId.get(ev.id) ?? costByDate.get(ev.date)
       return {
         eventId: ev.id,

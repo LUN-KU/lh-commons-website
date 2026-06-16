@@ -18,6 +18,48 @@ type Participant = {
   isReturning: boolean
 }
 
+type MemberHistory = { eventName: string; eventDate: string }
+
+function MemberHistoryModal({ name, email, onClose }: { name: string; email: string; onClose: () => void }) {
+  const [history, setHistory] = useState<MemberHistory[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  if (!history && !loading) {
+    setLoading(true)
+    fetch(`/api/admin/member-history?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(d => { setHistory(d.history ?? []); setLoading(false) })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm max-h-[70vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="p-5 border-b border-gray-100 flex items-start justify-between">
+          <div>
+            <h3 className="font-semibold text-brand-800">{name}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">過去 6 個月活動紀錄</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
+        <div className="overflow-y-auto flex-1 p-5">
+          {loading && <p className="text-gray-400 text-sm text-center py-6">載入中...</p>}
+          {history?.length === 0 && <p className="text-gray-400 text-sm text-center py-6">無參加紀錄</p>}
+          {history && history.length > 0 && (
+            <ul className="space-y-2">
+              {history.map((h, i) => (
+                <li key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                  <p className="text-sm text-gray-800 font-medium">{h.eventName}</p>
+                  <p className="text-xs text-gray-400 shrink-0 ml-3">{h.eventDate}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ParticipantModal({
   eventName, eventDate, eventId,
   onClose
@@ -29,10 +71,11 @@ function ParticipantModal({
 }) {
   const [participants, setParticipants] = useState<Participant[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [memberModal, setMemberModal] = useState<{ name: string; email: string } | null>(null)
 
   if (!participants && !loading) {
     setLoading(true)
-    fetch(`/api/admin/event-registrations?eventId=${encodeURIComponent(eventId)}&eventDate=${encodeURIComponent(eventDate)}`)
+    fetch(`/api/admin/event-registrations?eventId=${encodeURIComponent(eventId)}&eventDate=${encodeURIComponent(eventDate)}&eventName=${encodeURIComponent(eventName)}`)
       .then(r => r.json())
       .then(d => { setParticipants(d.participants ?? []); setLoading(false) })
   }
@@ -41,46 +84,61 @@ function ParticipantModal({
   const newCount = (participants?.length ?? 0) - returningCount
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-gray-100">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="font-semibold text-brand-800 text-lg">{eventName}</h2>
-              <p className="text-gray-400 text-sm mt-0.5">{eventDate}</p>
+    <>
+      {memberModal && (
+        <MemberHistoryModal
+          name={memberModal.name}
+          email={memberModal.email}
+          onClose={() => setMemberModal(null)}
+        />
+      )}
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="p-5 border-b border-gray-100">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="font-semibold text-brand-800 text-lg">{eventName}</h2>
+                <p className="text-gray-400 text-sm mt-0.5">{eventDate}</p>
+              </div>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            {participants && (
+              <div className="flex gap-3 mt-3">
+                <span className="text-xs bg-brand-50 text-brand-700 px-3 py-1 rounded-full">共 {participants.length} 人</span>
+                {returningCount > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">回流 {returningCount} 人</span>}
+                {newCount > 0 && <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">新里民 {newCount} 人</span>}
+              </div>
+            )}
           </div>
-          {participants && (
-            <div className="flex gap-3 mt-3">
-              <span className="text-xs bg-brand-50 text-brand-700 px-3 py-1 rounded-full">共 {participants.length} 人</span>
-              {returningCount > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">回流 {returningCount} 人</span>}
-              {newCount > 0 && <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">新里民 {newCount} 人</span>}
-            </div>
-          )}
-        </div>
-        <div className="overflow-y-auto flex-1 p-5">
-          {loading && <p className="text-gray-400 text-sm text-center py-8">載入中...</p>}
-          {participants?.length === 0 && <p className="text-gray-400 text-sm text-center py-8">尚無報名者</p>}
-          {participants && participants.length > 0 && (
-            <ul className="space-y-2">
-              {participants.map((p, i) => (
-                <li key={i} className={`flex items-center justify-between rounded-xl px-4 py-3 ${p.isReturning ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                    <p className="text-xs text-gray-400">{p.email}</p>
-                  </div>
-                  {p.isReturning
-                    ? <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0">回流里民</span>
-                    : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">新里民</span>
-                  }
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="overflow-y-auto flex-1 p-5">
+            {loading && <p className="text-gray-400 text-sm text-center py-8">載入中...</p>}
+            {participants?.length === 0 && <p className="text-gray-400 text-sm text-center py-8">尚無報名者</p>}
+            {participants && participants.length > 0 && (
+              <>
+                <ul className="space-y-2">
+                  {participants.map((p, i) => (
+                    <li key={i} className={`flex items-center justify-between rounded-xl px-4 py-3 ${p.isReturning ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
+                      <button
+                        className="text-left hover:opacity-70 transition-opacity"
+                        onClick={() => setMemberModal({ name: p.name, email: p.email })}
+                      >
+                        <p className="text-sm font-medium text-gray-800 underline decoration-dotted underline-offset-2">{p.name}</p>
+                        <p className="text-xs text-gray-400">{p.email}</p>
+                      </button>
+                      {p.isReturning
+                        ? <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0">回流里民</span>
+                        : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">新里民</span>
+                      }
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-gray-300 text-center mt-4">點擊姓名查看個人參加紀錄</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
