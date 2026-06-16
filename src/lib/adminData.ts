@@ -300,31 +300,34 @@ export function computeStats(
     .slice(-12)
     .map(([month, revenue]) => ({ month, revenue }))
 
-  // Return rate — find each member's first registration month
-  const memberFirst = new Map<string, string>()
-  for (const r of [...active].sort((a, b) => a.registrationDate.localeCompare(b.registrationDate))) {
-    if (!memberFirst.has(r.memberEmail)) {
-      memberFirst.set(r.memberEmail, r.registrationDate.slice(0, 7))
+  // Return rate — 以每筆報名為單位計算（同月份多次參加也能算回流）
+  // 按報名時間排序，第一次出現 = 新里民，之後每筆 = 回流
+  const memberSeen = new Set<string>()
+  const returnRateByMonth = new Map<string, { new: number; returning: number }>()
+
+  const sortedActive = [...active].sort((a, b) => {
+    const da = a.registrationDate || '9999'
+    const db = b.registrationDate || '9999'
+    return da.localeCompare(db)
+  })
+
+  for (const r of sortedActive) {
+    const month = r.registrationDate ? r.registrationDate.slice(0, 7) : null
+    if (!month) continue
+    if (!returnRateByMonth.has(month)) returnRateByMonth.set(month, { new: 0, returning: 0 })
+    const bucket = returnRateByMonth.get(month)!
+    if (memberSeen.has(r.memberEmail)) {
+      bucket.returning++
+    } else {
+      bucket.new++
+      memberSeen.add(r.memberEmail)
     }
   }
 
-  const monthMemberMap = new Map<string, Set<string>>()
-  for (const r of active) {
-    const month = r.registrationDate.slice(0, 7)
-    if (!monthMemberMap.has(month)) monthMemberMap.set(month, new Set())
-    monthMemberMap.get(month)!.add(r.memberEmail)
-  }
-
-  const returnRateData = Array.from(monthMemberMap.entries())
+  const returnRateData = Array.from(returnRateByMonth.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-12)
-    .map(([month, members]) => {
-      let newCount = 0, returningCount = 0
-      Array.from(members).forEach(email => {
-        memberFirst.get(email) === month ? newCount++ : returningCount++
-      })
-      return { month, new: newCount, returning: returningCount }
-    })
+    .map(([month, counts]) => ({ month, new: counts.new, returning: counts.returning }))
 
   const totalNetProfit = plData.reduce((s, p) => s + p.netProfit, 0)
   const latestMonthRevenue = monthlyRevenue.at(-1)?.revenue ?? 0
