@@ -20,6 +20,17 @@ export async function GET(req: NextRequest) {
     getEventsWithMap(),
   ])
 
+  // 建立活動日期查詢表（用於 registrationDate 為空的舊資料）
+  const eventIdToDate = new Map<string, string>(events.map(e => [e.id, e.date]))
+  const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
+
+  function getEffectiveDate(r: { eventId: string; eventName: string; registrationDate: string }): string {
+    if (r.registrationDate) return r.registrationDate.slice(0, 10)
+    if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
+    if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
+    return ''
+  }
+
   // 找到本場活動的費用設定
   const ev = events.find(e => e.id === eventId) ?? events.find(e => e.name === eventName)
 
@@ -30,13 +41,13 @@ export async function GET(req: NextRequest) {
     r.eventId ? r.eventId === eventId : r.eventName === eventName
   )
 
-  // 判斷回流
+  // 判斷回流：用活動日期（而非報名時間）做比較，因為舊資料報名時間為空
   const returningEmails = new Set<string>()
   for (const r of active) {
     const isSameEvent = r.eventId ? r.eventId === eventId : r.eventName === eventName
     if (isSameEvent) continue
-    const regDate = r.registrationDate?.slice(0, 10) ?? ''
-    if (regDate && regDate < eventDate) {
+    const date = getEffectiveDate(r)
+    if (date && date < eventDate) {
       returningEmails.add(r.memberEmail)
     }
   }
