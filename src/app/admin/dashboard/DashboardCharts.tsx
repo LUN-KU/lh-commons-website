@@ -122,9 +122,9 @@ function ParticipantModal({
                 </div>
                 {calculatedRevenue !== null && (
                   <div className="flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2">
-                    <span className="text-xs text-green-600">預估收入</span>
+                    <span className="text-xs text-green-600">試算收入</span>
                     <span className="text-base font-bold text-green-700">${fmt(calculatedRevenue)}</span>
-                    <span className="text-xs text-gray-400 ml-auto">依報名費自動加總</span>
+                    <span className="text-xs text-gray-400 ml-auto">有優惠券請以 Notion 為準</span>
                   </div>
                 )}
               </div>
