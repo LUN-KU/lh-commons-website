@@ -47,7 +47,8 @@ export type DashboardStats = {
     date: string
     category: string
     cost: number
-    revenue: number
+    revenue: number      // Notion 手動填入；0 = 未填
+    autoRevenue: number  // 從報名×費用自動算
     netProfit: number
     grossMargin: string
   }[]
@@ -272,7 +273,8 @@ export function computeStats(
   registrations: Registration[],
   costRecords: CostRecord[],
   events: EventInfo[],
-  dateMap: Map<string, EventInfo>
+  dateMap: Map<string, EventInfo>,
+  memberMap: Map<string, '一般里民' | '資深里民'> = new Map()
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
@@ -317,27 +319,43 @@ export function computeStats(
   // Brand P&L — all cost records (活動 + 個人服務 + 其他)
   const plData = costRecords
     .map(c => {
-      const ev = c.eventId ? events.find(e => e.id === c.eventId) : null
+      const ev = c.eventId ? events.find(e => e.id === c.eventId) : events.find(e => e.name === c.name)
+
+      // 自動算收入：找到此活動的報名者，依身份套用費用
+      let autoRevenue = 0
+      if (ev && (ev.feeGeneral > 0 || ev.feeSenior > 0)) {
+        const regs = active.filter(r => r.eventId ? r.eventId === ev.id : r.eventName === ev.name)
+        for (const r of regs) {
+          const type = memberMap.get(r.memberEmail) ?? '一般里民'
+          autoRevenue += type === '資深里民' && ev.feeSenior > 0 ? ev.feeSenior : ev.feeGeneral
+        }
+      }
+
+      const revenue = c.totalRevenue > 0 ? c.totalRevenue : autoRevenue
+      const netProfit = revenue - c.totalCost
+      const grossMargin = revenue > 0 ? `${Math.round((netProfit / revenue) * 1000) / 10}%` : '-'
+
       return {
         eventId: c.eventId,
         name: ev?.name ?? c.name,
         date: c.eventDate,
         category: c.category,
         cost: c.totalCost,
-        revenue: c.totalRevenue,
-        netProfit: c.netProfit,
-        grossMargin: c.grossMargin ?? '-',
+        revenue: c.totalRevenue,   // Notion 原始值（0 = 未填）
+        autoRevenue,               // 自動算的收入
+        netProfit,                 // 用有效收入計算
+        grossMargin,
       }
     })
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 20)
 
-  // Monthly revenue (last 12 months)
+  // Monthly revenue (last 12 months) — 用有效收入（Notion 或 auto）
   const monthRevMap = new Map<string, number>()
-  for (const c of costRecords) {
-    if (!c.eventDate) continue
-    const month = c.eventDate.slice(0, 7)
-    monthRevMap.set(month, (monthRevMap.get(month) ?? 0) + c.netProfit)
+  for (const row of plData) {
+    if (!row.date) continue
+    const month = row.date.slice(0, 7)
+    monthRevMap.set(month, (monthRevMap.get(month) ?? 0) + row.netProfit)
   }
   const monthlyRevenue = Array.from(monthRevMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))

@@ -449,7 +449,14 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                       }`}>{row.category}</span>
                     </td>
                     <td className="py-2.5 text-right text-gray-500 text-xs">{row.date}</td>
-                    <td className="py-2.5 text-right">{row.revenue > 0 ? `$${fmt(row.revenue)}` : '-'}</td>
+                    <td className="py-2.5 text-right">
+                      {row.revenue > 0
+                        ? `$${fmt(row.revenue)}`
+                        : row.autoRevenue > 0
+                          ? <span className="text-gray-500">${fmt(row.autoRevenue)}<span className="text-gray-300 text-xs ml-1">自動</span></span>
+                          : '-'
+                      }
+                    </td>
                     <td className="py-2.5 text-right text-gray-600">{row.cost > 0 ? `$${fmt(row.cost)}` : '-'}</td>
                     <td className={`py-2.5 text-right font-medium ${row.netProfit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                       {row.netProfit >= 0 ? '+' : ''}{`$${fmt(row.netProfit)}`}
