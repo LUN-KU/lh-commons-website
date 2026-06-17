@@ -88,10 +88,10 @@ export async function getAllRegistrations(): Promise<Registration[]> {
     for (const page of res.results as any[]) {
       const p = page.properties
       results.push({
-        eventId: getProp(p['活動ID'], 'text') as string,
-        eventName: getProp(p['活動名稱'], 'text') as string,
-        memberEmail: getProp(p['里民Email'], 'text') as string,
-        memberName: getProp(p['姓名'], 'text') as string,
+        eventId: (getProp(p['活動ID'], 'text') as string).trim(),
+        eventName: (getProp(p['活動名稱'], 'text') as string).trim(),
+        memberEmail: (getProp(p['里民Email'], 'text') as string).trim().toLowerCase(),
+        memberName: (getProp(p['姓名'], 'text') as string).trim(),
         registrationDate: getProp(p['報名時間'], 'date') as string,
         status: getProp(p['狀態'], 'text') as '已報名' | '已取消',
       })
@@ -165,7 +165,7 @@ export async function getAllMembers(): Promise<Map<string, '一般里民' | '資
       filter: { property: '狀態', select: { equals: '啟用' } },
     })
     for (const page of res.results as any[]) {
-      const email = page.properties['Email']?.email ?? ''
+      const email = (page.properties['Email']?.email ?? '').trim().toLowerCase()
       const type = page.properties['身份']?.select?.name ?? '一般里民'
       if (email) map.set(email, type as '一般里民' | '資深里民')
     }
