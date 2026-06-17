@@ -453,8 +453,10 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                       {row.revenue > 0
                         ? `$${fmt(row.revenue)}`
                         : row.autoRevenue > 0
-                          ? <span className="text-gray-500">${fmt(row.autoRevenue)}<span className="text-gray-300 text-xs ml-1">自動</span></span>
-                          : '-'
+                          ? <span className="text-gray-700">${fmt(row.autoRevenue)}<span className="text-gray-300 text-xs ml-1">自動</span></span>
+                          : row.registrationCount > 0 && !row.hasFees
+                            ? <span className="text-orange-400 text-xs">{row.registrationCount} 人・需填費用</span>
+                            : '-'
                       }
                     </td>
                     <td className="py-2.5 text-right text-gray-600">{row.cost > 0 ? `$${fmt(row.cost)}` : '-'}</td>

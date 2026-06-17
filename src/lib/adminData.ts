@@ -47,8 +47,10 @@ export type DashboardStats = {
     date: string
     category: string
     cost: number
-    revenue: number      // Notion 手動填入；0 = 未填
-    autoRevenue: number  // 從報名×費用自動算
+    revenue: number
+    autoRevenue: number
+    registrationCount: number
+    hasFees: boolean
     netProfit: number
     grossMargin: string
   }[]
@@ -321,11 +323,17 @@ export function computeStats(
     .map(c => {
       const ev = c.eventId ? events.find(e => e.id === c.eventId) : events.find(e => e.name === c.name)
 
-      // 自動算收入：找到此活動的報名者，依身份套用費用
+      // 找到此活動的報名人數（不論有無費用）
+      const eventRegs = ev
+        ? active.filter(r => r.eventId ? r.eventId === ev.id : r.eventName === ev.name)
+        : []
+      const registrationCount = eventRegs.length
+
+      // 自動算收入：有費用設定才算
       let autoRevenue = 0
-      if (ev && (ev.feeGeneral > 0 || ev.feeSenior > 0)) {
-        const regs = active.filter(r => r.eventId ? r.eventId === ev.id : r.eventName === ev.name)
-        for (const r of regs) {
+      const hasFees = ev && (ev.feeGeneral > 0 || ev.feeSenior > 0)
+      if (hasFees && ev) {
+        for (const r of eventRegs) {
           const type = memberMap.get(r.memberEmail) ?? '一般里民'
           autoRevenue += type === '資深里民' && ev.feeSenior > 0 ? ev.feeSenior : ev.feeGeneral
         }
@@ -341,9 +349,11 @@ export function computeStats(
         date: c.eventDate,
         category: c.category,
         cost: c.totalCost,
-        revenue: c.totalRevenue,   // Notion 原始值（0 = 未填）
-        autoRevenue,               // 自動算的收入
-        netProfit,                 // 用有效收入計算
+        revenue: c.totalRevenue,
+        autoRevenue,
+        registrationCount,
+        hasFees: !!hasFees,
+        netProfit,
         grossMargin,
       }
     })
