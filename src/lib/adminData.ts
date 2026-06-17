@@ -42,6 +42,7 @@ export type DashboardStats = {
     hasCost: boolean
   }[]
   plData: {
+    eventId: string | null
     name: string
     date: string
     category: string
@@ -316,9 +317,9 @@ export function computeStats(
   // Brand P&L — all cost records (活動 + 個人服務 + 其他)
   const plData = costRecords
     .map(c => {
-      // 活動類別：用 event 名稱（比 cost record 的名稱更新）
       const ev = c.eventId ? events.find(e => e.id === c.eventId) : null
       return {
+        eventId: c.eventId,
         name: ev?.name ?? c.name,
         date: c.eventDate,
         category: c.category,

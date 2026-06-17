@@ -64,11 +64,15 @@ function MemberHistoryModal({ name, email, onClose }: { name: string; email: str
 
 function ParticipantModal({
   eventName, eventDate, eventId,
+  notionRevenue, notionCost, notionNetProfit,
   onClose
 }: {
   eventName: string
   eventDate: string
   eventId: string
+  notionRevenue: number
+  notionCost: number
+  notionNetProfit: number
   onClose: () => void
 }) {
   const [participants, setParticipants] = useState<Participant[] | null>(null)
@@ -120,13 +124,31 @@ function ParticipantModal({
                   {seniorCount > 0 && <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">資深 {seniorCount} 人</span>}
                   {generalCount > 0 && <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">一般 {generalCount} 人</span>}
                 </div>
-                {calculatedRevenue !== null && (
+                {/* Notion 實際損益 */}
+                {notionRevenue > 0 || notionCost > 0 ? (
+                  <div className="grid grid-cols-3 gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">收入</p>
+                      <p className="text-sm font-semibold text-gray-800">${fmt(notionRevenue)}</p>
+                    </div>
+                    <div className="text-center border-x border-gray-200">
+                      <p className="text-xs text-gray-400">成本</p>
+                      <p className="text-sm font-semibold text-gray-800">${fmt(notionCost)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">淨利</p>
+                      <p className={`text-sm font-bold ${notionNetProfit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {notionNetProfit >= 0 ? '+' : ''}${fmt(notionNetProfit)}
+                      </p>
+                    </div>
+                  </div>
+                ) : calculatedRevenue !== null ? (
                   <div className="flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2">
                     <span className="text-xs text-green-600">試算收入</span>
                     <span className="text-base font-bold text-green-700">${fmt(calculatedRevenue)}</span>
-                    <span className="text-xs text-gray-400 ml-auto">有優惠券請以 Notion 為準</span>
+                    <span className="text-xs text-gray-400 ml-auto">Notion 尚未填入損益</span>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -212,11 +234,30 @@ function SyncButton() {
   )
 }
 
-type ModalState = { eventId: string; eventName: string; eventDate: string } | null
+type ModalState = {
+  eventId: string
+  eventName: string
+  eventDate: string
+  notionRevenue: number
+  notionCost: number
+  notionNetProfit: number
+} | null
 
 export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
   const { achievementData, plData, monthlyRevenue, returnRateData, summary } = stats
   const [modal, setModal] = useState<ModalState>(null)
+
+  function openModal(ev: typeof achievementData[0]) {
+    const pl = plData.find(p => p.eventId === ev.eventId) ?? plData.find(p => p.name === ev.name)
+    setModal({
+      eventId: ev.eventId,
+      eventName: ev.name,
+      eventDate: ev.date,
+      notionRevenue: pl?.revenue ?? 0,
+      notionCost: pl?.cost ?? 0,
+      notionNetProfit: pl?.netProfit ?? 0,
+    })
+  }
 
   return (
     <div className="space-y-8">
@@ -225,6 +266,9 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
           eventId={modal.eventId}
           eventName={modal.eventName}
           eventDate={modal.eventDate}
+          notionRevenue={modal.notionRevenue}
+          notionCost={modal.notionCost}
+          notionNetProfit={modal.notionNetProfit}
           onClose={() => setModal(null)}
         />
       )}
@@ -308,7 +352,7 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
             {achievementData.map((ev, i) => (
               <button
                 key={i}
-                onClick={() => setModal({ eventId: ev.eventId, eventName: ev.name, eventDate: ev.date })}
+                onClick={() => openModal(ev)}
                 className="border border-gray-100 rounded-xl p-4 text-left hover:border-brand-200 hover:shadow-sm transition-all cursor-pointer w-full"
               >
                 <p className="text-sm font-medium text-gray-800 truncate">{ev.name}</p>
