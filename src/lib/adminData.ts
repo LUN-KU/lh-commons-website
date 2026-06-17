@@ -195,13 +195,18 @@ export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap
       const date = p['日期']?.date?.start?.slice(0, 10)
       const name = p['活動名稱']?.title?.map((t: any) => t.plain_text).join('') ?? ''
       if (date && name) {
+        const feeGeneral = parseFee(p['一般里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? '')
+        const feeSenior = parseFee(p['資深里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? '')
+        const feeEarly = parseFee(p['早鳥里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? '')
+        // 若個別費用未填，從「費用說明」抓單一費用當備援
+        const feeDesc = parseFee(p['費用說明']?.rich_text?.map((t: any) => t.plain_text).join('') ?? '')
         const ev: EventInfo = {
           id: page.id,
           name,
           date,
-          feeGeneral: parseFee(p['一般里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
-          feeSenior: parseFee(p['資深里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
-          feeEarly: parseFee(p['早鳥里民費用']?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''),
+          feeGeneral: feeGeneral > 0 ? feeGeneral : feeDesc,
+          feeSenior: feeSenior > 0 ? feeSenior : feeDesc,
+          feeEarly,
         }
         events.push(ev)
         dateMap.set(date, ev)

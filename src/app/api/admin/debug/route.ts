@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllRegistrations, getEventsWithMap } from '@/lib/adminData'
+import { Client } from '@notionhq/client'
+
+const notion = new Client({ auth: process.env.NOTION_TOKEN })
+const EVENTS_DB = process.env.NOTION_EVENTS_DB_ID!
 
 export async function GET(req: NextRequest) {
   const cookie = req.cookies.get('lh_admin')?.value
@@ -7,12 +10,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [registrations, { events }] = await Promise.all([getAllRegistrations(), getEventsWithMap()])
-  const active = registrations.filter(r => r.status === '已報名')
-
-  return NextResponse.json({
-    sampleRegistrations: active.slice(0, 5).map(r => ({ eventId: r.eventId, eventName: r.eventName, status: r.status })),
-    sampleEvents: events.slice(0, 5).map(e => ({ id: e.id, name: e.name })),
-    totalActive: active.length,
+  const res: any = await notion.databases.query({
+    database_id: EVENTS_DB,
+    page_size: 5,
+    sorts: [{ property: '日期', direction: 'descending' }],
   })
+
+  const sample = res.results.map((page: any) => {
+    const p = page.properties
+    return {
+      name: p['活動名稱']?.title?.map((t: any) => t.plain_text).join(''),
+      feeGeneralRaw: p['一般里民費用'],
+      feeSeniorRaw: p['資深里民費用'],
+      feeDescRaw: p['費用說明'],
+    }
+  })
+
+  return NextResponse.json({ sample })
 }
