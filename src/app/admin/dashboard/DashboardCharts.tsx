@@ -247,6 +247,20 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
   const { achievementData, plData, monthlyRevenue, returnRateData, summary } = stats
   const [modal, setModal] = useState<ModalState>(null)
 
+  // 月份過濾 — 從資料中取得所有月份，預設最新月份
+  const allMonths = Array.from(new Set([
+    ...achievementData.map(e => e.date.slice(0, 7)),
+    ...plData.map(p => p.date?.slice(0, 7)).filter(Boolean),
+  ])).sort().reverse()
+  const [selectedMonth, setSelectedMonth] = useState<string>(allMonths[0] ?? '')
+
+  const filteredAchievement = selectedMonth
+    ? achievementData.filter(e => e.date.startsWith(selectedMonth))
+    : achievementData
+  const filteredPL = selectedMonth
+    ? plData.filter(p => p.date?.startsWith(selectedMonth))
+    : plData
+
   function openModal(ev: typeof achievementData[0]) {
     const pl = plData.find(p => p.eventId === ev.eventId) ?? plData.find(p => p.name === ev.name)
     setModal({
@@ -335,21 +349,40 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
         </div>
       </div>
 
+      {/* Month filter */}
+      {allMonths.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {allMonths.map(m => (
+            <button
+              key={m}
+              onClick={() => setSelectedMonth(m)}
+              className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+                selectedMonth === m
+                  ? 'bg-brand-700 text-white border-brand-700'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-brand-300'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Achievement rate */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-brand-800">活動達成率</h2>
-          {achievementData.length > 0 && !achievementData.some(a => a.hasCost) && (
+          {filteredAchievement.length > 0 && !filteredAchievement.some(a => a.hasCost) && (
             <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full">
               請在 Notion「活動損益追蹤」填入各活動的成本與收入
             </span>
           )}
         </div>
-        {achievementData.length === 0 ? (
-          <p className="text-gray-400 text-sm py-4 text-center">尚無活動資料</p>
+        {filteredAchievement.length === 0 ? (
+          <p className="text-gray-400 text-sm py-4 text-center">此月份尚無活動資料</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {achievementData.map((ev, i) => (
+            {filteredAchievement.map((ev, i) => (
               <button
                 key={i}
                 onClick={() => openModal(ev)}
@@ -388,8 +421,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
       {/* P&L table */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <h2 className="text-base font-semibold text-brand-800 mb-4">品牌損益明細</h2>
-        {plData.length === 0 ? (
-          <p className="text-gray-400 text-sm py-4 text-center">尚無資料</p>
+        {filteredPL.length === 0 ? (
+          <p className="text-gray-400 text-sm py-4 text-center">此月份尚無資料</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -405,7 +438,7 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                 </tr>
               </thead>
               <tbody>
-                {plData.map((row, i) => (
+                {filteredPL.map((row, i) => (
                   <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="py-2.5 max-w-[180px] truncate">{row.name}</td>
                     <td className="py-2.5">
