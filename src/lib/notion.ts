@@ -35,6 +35,20 @@ function getIcon(page: any): string | null {
   return null
 }
 
+// 根據活動日期 + 結束時間自動判斷是否已結束（結束後 30 分鐘）
+// 時間格式支援：14:00-16:00、14:00 – 16:00、14:00
+function autoStatus(date: string | null, time: string, notionStatus: string): string {
+  if (!date || notionStatus === '已結束') return notionStatus
+  const matches = time.match(/(\d{1,2}):(\d{2})/g)
+  if (!matches || matches.length === 0) return notionStatus
+  const endStr = matches[matches.length - 1]
+  const [h, m] = endStr.split(':').map(Number)
+  // 以台灣時間（UTC+8）建立結束時間
+  const endMs = Date.parse(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+08:00`)
+  if (isNaN(endMs)) return notionStatus
+  return Date.now() > endMs + 30 * 60 * 1000 ? '已結束' : notionStatus
+}
+
 function getText(prop: any): string {
   if (!prop) return ''
   if (prop.type === 'rich_text') return prop.rich_text.map((t: any) => t.plain_text).join('')
@@ -51,23 +65,28 @@ export async function getEvents(): Promise<Event[]> {
     sorts: [{ property: '日期', direction: 'ascending' }],
   })
 
-  return response.results.map((page: any) => ({
-    id: page.id,
-    name: getText(page.properties['活動名稱']),
-    date: getText(page.properties['日期']),
-    time: getText(page.properties['時間']),
-    location: getText(page.properties['地點']),
-    category: getText(page.properties['類別']),
-    fee: getText(page.properties['費用說明']),
-    regularFee: getText(page.properties['一般里民費用']),
-    memberFee: getText(page.properties['資深里民費用']),
-    earlyFee: getText(page.properties['早鳥里民費用']),
-    registrationUrl: getText(page.properties['報名連結']) || null,
-    status: getText(page.properties['狀態']),
-    coverImage: getCover(page),
-    iconImage: getIcon(page),
-    memberOnly: page.properties['會員限定']?.checkbox ?? false,
-  }))
+  return response.results.map((page: any) => {
+    const date = getText(page.properties['日期'])
+    const time = getText(page.properties['時間'])
+    const notionStatus = getText(page.properties['狀態'])
+    return {
+      id: page.id,
+      name: getText(page.properties['活動名稱']),
+      date,
+      time,
+      location: getText(page.properties['地點']),
+      category: getText(page.properties['類別']),
+      fee: getText(page.properties['費用說明']),
+      regularFee: getText(page.properties['一般里民費用']),
+      memberFee: getText(page.properties['資深里民費用']),
+      earlyFee: getText(page.properties['早鳥里民費用']),
+      registrationUrl: getText(page.properties['報名連結']) || null,
+      status: autoStatus(date, time, notionStatus),
+      coverImage: getCover(page),
+      iconImage: getIcon(page),
+      memberOnly: page.properties['會員限定']?.checkbox ?? false,
+    }
+  })
 }
 
 // 關於我們頁面 ID（/about 使用）
@@ -198,11 +217,14 @@ export async function getActivityPhotos(): Promise<string[]> {
 export async function getEvent(id: string): Promise<Event | null> {
   try {
     const page: any = await notion.pages.retrieve({ page_id: id })
+    const date = getText(page.properties['日期'])
+    const time = getText(page.properties['時間'])
+    const notionStatus = getText(page.properties['狀態'])
     return {
       id: page.id,
       name: getText(page.properties['活動名稱']),
-      date: getText(page.properties['日期']),
-      time: getText(page.properties['時間']),
+      date,
+      time,
       location: getText(page.properties['地點']),
       category: getText(page.properties['類別']),
       fee: getText(page.properties['費用說明']),
@@ -210,7 +232,7 @@ export async function getEvent(id: string): Promise<Event | null> {
       memberFee: getText(page.properties['資深里民費用']),
       earlyFee: getText(page.properties['早鳥里民費用']),
       registrationUrl: getText(page.properties['報名連結']) || null,
-      status: getText(page.properties['狀態']),
+      status: autoStatus(date, time, notionStatus),
       coverImage: getCover(page),
       iconImage: getIcon(page),
       memberOnly: page.properties['會員限定']?.checkbox ?? false,
