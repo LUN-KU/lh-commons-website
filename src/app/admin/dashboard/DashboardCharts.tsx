@@ -350,7 +350,7 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
       </div>
 
       {/* Month filter */}
-      {allMonths.length > 1 && (
+      {allMonths.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {allMonths.map(m => (
             <button
