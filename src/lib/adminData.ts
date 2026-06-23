@@ -285,19 +285,35 @@ export function computeStats(
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
-  // 同名活動出現超過一次時，不能用名字做 fallback（否則 6 月資料會跑到 7 月同名活動）
-  const eventNameCount = new Map<string, number>()
-  for (const ev of events) eventNameCount.set(ev.name, (eventNameCount.get(ev.name) ?? 0) + 1)
-  const uniqueEventNames = new Set(Array.from(eventNameCount.entries()).filter(([, n]) => n === 1).map(([name]) => name))
+  // 依活動名稱建立事件列表（由舊到新），用於 name-fallback 的智慧分配
+  const eventsByName = new Map<string, EventInfo[]>()
+  for (const ev of events) {
+    if (!eventsByName.has(ev.name)) eventsByName.set(ev.name, [])
+    eventsByName.get(ev.name)!.push(ev)
+  }
+  Array.from(eventsByName.values()).forEach(evList => evList.sort((a: EventInfo, b: EventInfo) => a.date.localeCompare(b.date)))
 
-  // Group active registrations by event ID (精準) 和 event name (備援：僅唯一名稱才用)
+  // Map: 沒有 eventId 的報名 → 推斷應歸屬的 eventId
+  // 若同名只有一場活動 → 直接歸屬；若多場 → 依報名日期找最近的未來場，無日期則歸最舊場
+  const regToEventId = new Map<Registration, string>()
   const byEventId = new Map<string, number>()
-  const byEventName = new Map<string, number>()
+
   for (const r of active) {
     if (r.eventId) {
       byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
-    } else if (r.eventName && uniqueEventNames.has(r.eventName)) {
-      byEventName.set(r.eventName, (byEventName.get(r.eventName) ?? 0) + 1)
+    } else if (r.eventName) {
+      const evList = eventsByName.get(r.eventName) ?? []
+      if (evList.length === 0) continue
+      let targetEv: EventInfo
+      if (evList.length === 1) {
+        targetEv = evList[0]
+      } else {
+        const regDate = r.registrationDate?.slice(0, 10)
+        // 找報名日期之後最近的一場；無報名日期則指向最舊一場（舊資料預設屬第一場）
+        targetEv = (regDate ? evList.find(e => e.date >= regDate) : undefined) ?? evList[0]
+      }
+      byEventId.set(targetEv.id, (byEventId.get(targetEv.id) ?? 0) + 1)
+      regToEventId.set(r, targetEv.id)
     }
   }
 
@@ -312,7 +328,7 @@ export function computeStats(
   // Achievement rate — all events as primary source
   const achievementData = events
     .map(ev => {
-      const actual = byEventId.get(ev.id) ?? byEventName.get(ev.name) ?? 0
+      const actual = byEventId.get(ev.id) ?? 0
       const cost = costByEventId.get(ev.id) ?? costByDate.get(ev.date)
       return {
         eventId: ev.id,
@@ -338,15 +354,15 @@ export function computeStats(
       }
       if (!ev) {
         ev = costDate
-          ? (events.find(e => e.name === c.name && e.date === costDate) ?? events.find(e => uniqueEventNames.has(e.name) && e.name === c.name))
-          : events.find(e => uniqueEventNames.has(e.name) && e.name === c.name)
+          ? events.find(e => e.name === c.name && e.date === costDate)
+          : undefined
       }
 
-      // 找到此活動的報名人數（僅唯一名稱才用 name fallback）
+      // 找到此活動的報名人數（含 name-fallback 的智慧分配結果）
       const eventRegs = ev
         ? active.filter(r => r.eventId
             ? r.eventId === ev!.id
-            : (uniqueEventNames.has(ev!.name) && r.eventName === ev!.name))
+            : regToEventId.get(r) === ev!.id)
         : []
       const registrationCount = eventRegs.length
 
@@ -399,9 +415,8 @@ export function computeStats(
   const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
 
   function getEffectiveDate(r: Registration): string {
-    // 優先用活動日期，確保月份歸類以「活動發生時間」為準，而非報名時間
-    if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
-    if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
+    const effectiveId = r.eventId || regToEventId.get(r)
+    if (effectiveId && eventIdToDate.has(effectiveId)) return eventIdToDate.get(effectiveId)!
     if (r.registrationDate) return r.registrationDate.slice(0, 10)
     return ''
   }
