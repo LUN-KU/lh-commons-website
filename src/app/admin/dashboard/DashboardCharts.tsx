@@ -297,8 +297,8 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
         <SummaryCard label="累計報名人次" value={fmt(summary.totalRegistrations)} />
         <SummaryCard label="不重複里民數" value={fmt(summary.uniqueMembers)} />
         <SummaryCard
-          label="本月收益"
-          value={`$${fmt(summary.latestMonthRevenue)}`}
+          label={`${selectedMonth} 收益`}
+          value={`$${fmt(monthlyRevenue.find(m => m.month === selectedMonth)?.revenue ?? 0)}`}
           sub="來自活動成本預估表"
         />
         <SummaryCard
