@@ -7,8 +7,8 @@ export default function Footer() {
         <div className="flex justify-center mb-3">
           <Image src="/logo.png" alt="領航里" width={48} height={48} className="opacity-90 rounded-full" />
         </div>
-        <p className="text-lg font-bold mb-1">領航里</p>
-        <p className="text-sm text-brand-300 mb-4">深度交流 × 有效社交 × 打造理想生活圈</p>
+        <p className="text-lg font-bold mb-1">領航里里民活動</p>
+        <p className="text-sm text-brand-300 mb-4">深度交流 × 輕鬆社交 × 打造理想生活圈</p>
         <div className="flex justify-center gap-6 text-sm text-brand-300">
           <a href="https://www.instagram.com/l.h_commons" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
             Instagram @l.h_commons
