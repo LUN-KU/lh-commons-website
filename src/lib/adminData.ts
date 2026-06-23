@@ -285,13 +285,18 @@ export function computeStats(
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
-  // Group active registrations by event ID (精準) 和 event name (備援給 eventId 為空的舊資料)
+  // 同名活動出現超過一次時，不能用名字做 fallback（否則 6 月資料會跑到 7 月同名活動）
+  const eventNameCount = new Map<string, number>()
+  for (const ev of events) eventNameCount.set(ev.name, (eventNameCount.get(ev.name) ?? 0) + 1)
+  const uniqueEventNames = new Set(Array.from(eventNameCount.entries()).filter(([, n]) => n === 1).map(([name]) => name))
+
+  // Group active registrations by event ID (精準) 和 event name (備援：僅唯一名稱才用)
   const byEventId = new Map<string, number>()
   const byEventName = new Map<string, number>()
   for (const r of active) {
     if (r.eventId) {
       byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
-    } else if (r.eventName) {
+    } else if (r.eventName && uniqueEventNames.has(r.eventName)) {
       byEventName.set(r.eventName, (byEventName.get(r.eventName) ?? 0) + 1)
     }
   }
@@ -327,9 +332,11 @@ export function computeStats(
     .map(c => {
       const ev = c.eventId ? events.find(e => e.id === c.eventId) : events.find(e => e.name === c.name)
 
-      // 找到此活動的報名人數（不論有無費用）
+      // 找到此活動的報名人數（僅唯一名稱才用 name fallback）
       const eventRegs = ev
-        ? active.filter(r => r.eventId ? r.eventId === ev.id : r.eventName === ev.name)
+        ? active.filter(r => r.eventId
+            ? r.eventId === ev.id
+            : (uniqueEventNames.has(ev.name) && r.eventName === ev.name))
         : []
       const registrationCount = eventRegs.length
 
