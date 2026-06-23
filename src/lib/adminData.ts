@@ -399,9 +399,10 @@ export function computeStats(
   const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
 
   function getEffectiveDate(r: Registration): string {
-    if (r.registrationDate) return r.registrationDate.slice(0, 10)
+    // 優先用活動日期，確保月份歸類以「活動發生時間」為準，而非報名時間
     if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
     if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
+    if (r.registrationDate) return r.registrationDate.slice(0, 10)
     return ''
   }
 
