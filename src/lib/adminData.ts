@@ -321,7 +321,6 @@ export function computeStats(
       }
     })
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 12)
 
   // Brand P&L — all cost records (活動 + 個人服務 + 其他)
   const plData = costRecords
