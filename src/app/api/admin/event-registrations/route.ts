@@ -31,15 +31,29 @@ export async function GET(req: NextRequest) {
     return ''
   }
 
-  // 找到本場活動的費用設定
-  const ev = events.find(e => e.id === eventId) ?? events.find(e => e.name === eventName)
+  // 找到本場活動的費用設定（三重驗證：ID → 日期確認 → 名稱+日期）
+  let ev = events.find(e => e.id === eventId)
+  if (ev && ev.date !== eventDate) ev = events.find(e => e.name === eventName && e.date === eventDate) ?? ev
+  if (!ev) ev = events.find(e => e.name === eventName && e.date === eventDate)
+
+  // 同名活動列表（由舊到新），用於推斷舊報名歸屬
+  const sameNameEvents = events.filter(e => e.name === eventName).sort((a, b) => a.date.localeCompare(b.date))
+  const isEarliestOccurrence = sameNameEvents[0]?.id === eventId
 
   const active = allRegistrations.filter(r => r.status === '已報名')
 
-  // 找出此活動的報名者
-  const eventRegs = active.filter(r =>
-    r.eventId ? r.eventId === eventId : r.eventName === eventName
-  )
+  // 找出此活動的報名者：有 eventId 精準比對；無 eventId 用名字+日期推斷
+  const eventRegs = active.filter(r => {
+    if (r.eventId) return r.eventId === eventId
+    if (r.eventName !== eventName) return false
+    // 舊報名無 eventId：有報名時間則找最近的未來場，無則歸最舊場
+    const regDate = r.registrationDate?.slice(0, 10)
+    if (regDate) {
+      const attributed = sameNameEvents.find(e => e.date >= regDate) ?? sameNameEvents[sameNameEvents.length - 1]
+      return attributed?.id === eventId
+    }
+    return isEarliestOccurrence
+  })
 
   // 判斷回流：用活動日期（而非報名時間）做比較，因為舊資料報名時間為空
   const returningEmails = new Set<string>()
