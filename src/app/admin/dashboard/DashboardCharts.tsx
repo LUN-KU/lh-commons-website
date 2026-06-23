@@ -335,7 +335,7 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
             <p className="text-gray-400 text-sm py-8 text-center">尚無資料</p>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={returnRateData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <BarChart data={returnRateData.filter(d => d.month === selectedMonth)} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
