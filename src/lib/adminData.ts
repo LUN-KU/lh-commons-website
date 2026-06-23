@@ -330,13 +330,23 @@ export function computeStats(
   // Brand P&L — all cost records (活動 + 個人服務 + 其他)
   const plData = costRecords
     .map(c => {
-      const ev = c.eventId ? events.find(e => e.id === c.eventId) : events.find(e => e.name === c.name)
+      const costDate = c.eventDate?.slice(0, 10)
+      // 先用 eventId 找，再驗證日期是否吻合；不吻合就改用名字+日期找正確的活動
+      let ev = c.eventId ? events.find(e => e.id === c.eventId) : undefined
+      if (ev && costDate && ev.date !== costDate) {
+        ev = events.find(e => e.name === c.name && e.date === costDate) ?? ev
+      }
+      if (!ev) {
+        ev = costDate
+          ? (events.find(e => e.name === c.name && e.date === costDate) ?? events.find(e => uniqueEventNames.has(e.name) && e.name === c.name))
+          : events.find(e => uniqueEventNames.has(e.name) && e.name === c.name)
+      }
 
       // 找到此活動的報名人數（僅唯一名稱才用 name fallback）
       const eventRegs = ev
         ? active.filter(r => r.eventId
-            ? r.eventId === ev.id
-            : (uniqueEventNames.has(ev.name) && r.eventName === ev.name))
+            ? r.eventId === ev!.id
+            : (uniqueEventNames.has(ev!.name) && r.eventName === ev!.name))
         : []
       const registrationCount = eventRegs.length
 
