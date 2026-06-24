@@ -41,9 +41,7 @@ export default async function Home() {
             <h2 className="text-xl md:text-2xl font-bold text-white mb-5">{sectionTitle}</h2>
             <div className="w-14 h-0.5 bg-white/30 mb-6" />
             {bodyBlocks.length > 0 ? (
-              <div className="text-sm leading-relaxed [&_p]:text-white/70 [&_p]:mb-2">
-                <NotionBlocks blocks={bodyBlocks} />
-              </div>
+              <NotionBlocks blocks={bodyBlocks} dark />
             ) : (
               <p className="text-white/50 text-sm leading-relaxed">
                 想要結交一同熱愛學習生活的朋友，那就來參加領航里民活動，從讀書會、打羽球、劇本殺、密室逃脫、繪畫課等等各式各樣活動等待你一同加入。

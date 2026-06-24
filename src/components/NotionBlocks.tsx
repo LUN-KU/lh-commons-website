@@ -46,7 +46,39 @@ function youtubeEmbedUrl(url: string): string | null {
   return match ? `https://www.youtube.com/embed/${match[1]}` : null
 }
 
-export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
+export default function NotionBlocks({ blocks, dark = false }: { blocks: NotionBlock[]; dark?: boolean }) {
+  const c = dark ? {
+    text: 'text-white/75 leading-relaxed text-[15px]',
+    heading1: 'text-xl font-black text-white pb-2 border-b border-white/20',
+    heading2: 'text-base font-bold text-white/90 flex items-center gap-2',
+    heading2bar: 'w-1 h-4 bg-white/40 rounded-full inline-block flex-none',
+    heading3: 'text-sm font-bold text-white/70 uppercase tracking-wide',
+    card: 'bg-white/10 border border-white/15 rounded-2xl px-5 py-4',
+    cardText: 'text-white/80 leading-relaxed text-[15px]',
+    li: 'flex gap-2.5 text-white/75 leading-relaxed',
+    dot: 'flex-none mt-2 w-1.5 h-1.5 rounded-full bg-white/40 inline-block',
+    numBadge: 'flex-none w-6 h-6 rounded-full bg-white/20 text-white/80 text-xs font-bold flex items-center justify-center mt-0.5',
+    quote: 'border-l-4 border-white/30 pl-4 py-1 text-white/60 italic text-sm',
+    callout: 'flex gap-3 bg-white/10 border border-white/15 rounded-2xl px-5 py-4',
+    calloutText: 'text-white/80 leading-relaxed text-sm',
+    divider: 'border-white/15',
+  } : {
+    text: 'text-brand-700 leading-relaxed text-[15px]',
+    heading1: 'text-xl font-black text-brand-900 pb-2 border-b border-brand-100',
+    heading2: 'text-base font-bold text-brand-800 flex items-center gap-2',
+    heading2bar: 'w-1 h-4 bg-brand-400 rounded-full inline-block flex-none',
+    heading3: 'text-sm font-bold text-brand-600 uppercase tracking-wide',
+    card: 'bg-brand-50 border border-brand-100 rounded-2xl px-5 py-4',
+    cardText: 'text-brand-800 leading-relaxed text-[15px]',
+    li: 'flex gap-2.5 text-brand-700 leading-relaxed',
+    dot: 'flex-none mt-2 w-1.5 h-1.5 rounded-full bg-brand-300 inline-block',
+    numBadge: 'flex-none w-6 h-6 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center mt-0.5',
+    quote: 'border-l-4 border-brand-300 pl-4 py-1 text-brand-500 italic text-sm',
+    callout: 'flex gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4',
+    calloutText: 'text-amber-800 leading-relaxed text-sm',
+    divider: 'border-brand-100',
+  }
+
   const elements: React.ReactNode[] = []
   let bulletBuffer: NotionBlock[] = []
   let numberedBuffer: NotionBlock[] = []
@@ -56,8 +88,8 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
     elements.push(
       <ul key={`ul-${elements.length}`} className="space-y-2 pl-2">
         {bulletBuffer.map(b => (
-          <li key={b.id} className="flex gap-2.5 text-brand-700 leading-relaxed">
-            <span className="flex-none mt-2 w-1.5 h-1.5 rounded-full bg-brand-300 inline-block" />
+          <li key={b.id} className={c.li}>
+            <span className={c.dot} />
             <span><RichText arr={b.bulleted_list_item?.rich_text} /></span>
           </li>
         ))}
@@ -71,10 +103,8 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
     elements.push(
       <ol key={`ol-${elements.length}`} className="space-y-2 pl-2">
         {numberedBuffer.map((b, idx) => (
-          <li key={b.id} className="flex gap-3 text-brand-700 leading-relaxed">
-            <span className="flex-none w-6 h-6 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center mt-0.5">
-              {idx + 1}
-            </span>
+          <li key={b.id} className={c.li}>
+            <span className={c.numBadge}>{idx + 1}</span>
             <span><RichText arr={b.numbered_list_item?.rich_text} /></span>
           </li>
         ))}
@@ -95,18 +125,15 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
           break
         }
 
-        // emoji 開頭 → 渲染為區塊卡片
         if (startsWithEmoji(text)) {
           elements.push(
-            <div key={block.id} className="bg-brand-50 border border-brand-100 rounded-2xl px-5 py-4">
-              <p className="text-brand-800 leading-relaxed text-[15px]">
-                <RichText arr={block.paragraph?.rich_text} />
-              </p>
+            <div key={block.id} className={c.card}>
+              <p className={c.cardText}><RichText arr={block.paragraph?.rich_text} /></p>
             </div>
           )
         } else {
           elements.push(
-            <p key={block.id} className="text-brand-700 leading-relaxed text-[15px]">
+            <p key={block.id} className={c.text}>
               <RichText arr={block.paragraph?.rich_text} />
             </p>
           )
@@ -117,9 +144,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
       case 'heading_1':
         elements.push(
           <div key={block.id} className="pt-2">
-            <h2 className="text-xl font-black text-brand-900 pb-2 border-b border-brand-100">
-              <RichText arr={block.heading_1?.rich_text} />
-            </h2>
+            <h2 className={c.heading1}><RichText arr={block.heading_1?.rich_text} /></h2>
           </div>
         )
         break
@@ -127,8 +152,8 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
       case 'heading_2':
         elements.push(
           <div key={block.id} className="pt-1">
-            <h3 className="text-base font-bold text-brand-800 flex items-center gap-2">
-              <span className="w-1 h-4 bg-brand-400 rounded-full inline-block flex-none" />
+            <h3 className={c.heading2}>
+              <span className={c.heading2bar} />
               <RichText arr={block.heading_2?.rich_text} />
             </h3>
           </div>
@@ -137,9 +162,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'heading_3':
         elements.push(
-          <h4 key={block.id} className="text-sm font-bold text-brand-600 uppercase tracking-wide">
-            <RichText arr={block.heading_3?.rich_text} />
-          </h4>
+          <h4 key={block.id} className={c.heading3}><RichText arr={block.heading_3?.rich_text} /></h4>
         )
         break
 
@@ -153,7 +176,7 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'quote':
         elements.push(
-          <blockquote key={block.id} className="border-l-4 border-brand-300 pl-4 py-1 text-brand-500 italic text-sm">
+          <blockquote key={block.id} className={c.quote}>
             <RichText arr={block.quote?.rich_text} />
           </blockquote>
         )
@@ -161,17 +184,15 @@ export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
 
       case 'callout':
         elements.push(
-          <div key={block.id} className="flex gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+          <div key={block.id} className={c.callout}>
             <span className="text-xl flex-none">{block.callout?.icon?.emoji ?? 'ℹ️'}</span>
-            <p className="text-amber-800 leading-relaxed text-sm">
-              <RichText arr={block.callout?.rich_text} />
-            </p>
+            <p className={c.calloutText}><RichText arr={block.callout?.rich_text} /></p>
           </div>
         )
         break
 
       case 'divider':
-        elements.push(<hr key={block.id} className="border-brand-100" />)
+        elements.push(<hr key={block.id} className={c.divider} />)
         break
 
       case 'image': {
