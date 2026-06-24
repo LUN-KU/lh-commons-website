@@ -31,7 +31,7 @@ export default async function Home() {
           {/* Left: text */}
           <div>
             <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-5">Activities</p>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-5">讓 Learn 成為你的 hobby</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-5 whitespace-nowrap">讓 Learn 成為你的 hobby</h2>
             <div className="w-14 h-0.5 bg-white/30 mb-6" />
             <p className="text-white/50 text-sm leading-relaxed">
               想要結交一同熱愛學習生活的朋友，那就來參加領航里民活動，從讀書會、打羽球、劇本殺、密室逃脫、繪畫課等等各式各樣活動等待你一同加入。
