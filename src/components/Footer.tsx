@@ -1,12 +1,11 @@
-import Image from 'next/image'
-
 export default function Footer() {
   return (
     <footer className="bg-brand-800 text-brand-100 py-10 mt-16">
       <div className="max-w-5xl mx-auto px-6 text-center">
         <div className="flex justify-center mb-3">
-          <span className="flex-none w-16 h-16 rounded-full overflow-hidden block">
-            <Image src="/logo.png" alt="領航里" width={64} height={64} className="w-full h-full object-cover scale-110 origin-center" />
+          <span className="flex-none w-24 h-24 rounded-full overflow-hidden block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="領航里" className="w-full h-full object-cover scale-105 origin-center" />
           </span>
         </div>
         <p className="text-lg font-bold mb-1">領航里里民活動</p>
