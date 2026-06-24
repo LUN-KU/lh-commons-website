@@ -3,7 +3,7 @@ export default function Footer() {
     <footer className="bg-brand-800 text-brand-100 py-10 mt-16">
       <div className="max-w-5xl mx-auto px-6 text-center">
         <div className="flex justify-center mb-3">
-          <span className="flex-none w-24 h-24 rounded-full bg-white p-1 block">
+          <span className="flex-none w-24 h-24 rounded-full overflow-hidden bg-white flex items-center justify-center p-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="領航里" className="w-full h-full object-contain" />
           </span>
