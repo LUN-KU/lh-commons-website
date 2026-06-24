@@ -19,7 +19,7 @@ export default function Navbar() {
     <nav className="bg-brand-800/70 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <Image src="/logo.png" alt="領航里" width={36} height={36} className="rounded-full" />
+          <Image src="/logo.png" alt="領航里" width={40} height={40} className="rounded-full" />
           <span className="text-lg font-bold text-white tracking-widest">領航里</span>
         </Link>
 
