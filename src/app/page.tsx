@@ -24,41 +24,6 @@ export default async function Home() {
   return (
     <div>
 
-      {/* ── Section 1: Intro ── */}
-      <section className="max-w-5xl mx-auto px-6 pt-16 pb-14">
-        <p className="text-white/65 text-base leading-relaxed max-w-3xl mb-16">
-          {homeSettings.intro || '領航里致力於帶領大家共同成長，透過舉辦多元化的同樂活動，促進彼此的交流與合作。我們相信，在這裡，成長不僅是個人的，更是大家攜手並進的旅程，讓每個人成為更好的自己。'}
-        </p>
-
-        {/* Large display text */}
-        <div className="border-t border-white/10 pt-10 mb-12">
-          <p className="text-[clamp(2.2rem,5.8vw,5.5rem)] font-thin text-white/70 tracking-[0.15em] leading-none select-none whitespace-nowrap">
-            LIBERTY HOPEFUL
-          </p>
-        </div>
-
-        {/* Tagline：右移對齊 H 的位置 */}
-        <div className="md:pl-[52%] flex items-start gap-6">
-          <div className="hidden md:block flex-none pt-2">
-            <div className="w-10 h-px bg-white/30" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-lg mb-3">領航里里民｜交流、學習、社交</p>
-            <p className="text-white/55 text-sm leading-relaxed mb-4">
-              {homeSettings.taglineDesc || '這裡是一個交流學習的平台，我們會舉辦各種活動包含學習讀書會、同樂桌遊、繪畫手作課程、烘焙料理、劇本殺密室等等，希望大家能在這裡找到可以一起前進成長的同伴。'}
-            </p>
-            <a
-              href="https://www.instagram.com/l.h_commons"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
-            >
-              追蹤 @l.h_commons →
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* ── Section 2: 活動介紹 ── */}
       <section className="bg-white/5 border-y border-white/10 py-20 px-6">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">

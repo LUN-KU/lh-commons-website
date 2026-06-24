@@ -23,7 +23,7 @@ export default function Navbar() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="領航里" className="w-full h-full object-contain" />
           </span>
-          <span className="text-lg font-bold text-white tracking-widest">領航里</span>
+          <span className="text-lg font-bold text-white tracking-widest">領航里里民活動</span>
         </Link>
 
         {/* Desktop */}
