@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { getEvents, getHomePageSettings, getActivityFeaturedImage } from '@/lib/notion'
+import { getEvents, getHomePageBlocks, getActivityFeaturedImage } from '@/lib/notion'
 import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
+import NotionBlocks from '@/components/NotionBlocks'
 
 export const revalidate = 60
 
@@ -14,12 +15,18 @@ const SERVICES = [
 ]
 
 export default async function Home() {
-  const [allEvents, homeSettings, featuredImage] = await Promise.all([
+  const [allEvents, homeBlocks, featuredImage] = await Promise.all([
     getEvents(),
-    getHomePageSettings(),
+    getHomePageBlocks(),
     getActivityFeaturedImage(),
   ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
+
+  const headingBlock = homeBlocks.find(b => ['heading_1', 'heading_2', 'heading_3'].includes(b.type))
+  const sectionTitle = headingBlock
+    ? (headingBlock[headingBlock.type]?.rich_text ?? []).map((t: any) => t.plain_text).join('')
+    : '讓 Learn 成為你的 hobby'
+  const bodyBlocks = homeBlocks.filter(b => b !== headingBlock)
 
   return (
     <div>
@@ -31,11 +38,17 @@ export default async function Home() {
           {/* Left: text */}
           <div>
             <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-5">Activities</p>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-5 whitespace-nowrap">讓 Learn 成為你的 hobby</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-5">{sectionTitle}</h2>
             <div className="w-14 h-0.5 bg-white/30 mb-6" />
-            <p className="text-white/50 text-sm leading-relaxed">
-              想要結交一同熱愛學習生活的朋友，那就來參加領航里民活動，從讀書會、打羽球、劇本殺、密室逃脫、繪畫課等等各式各樣活動等待你一同加入。
-            </p>
+            {bodyBlocks.length > 0 ? (
+              <div className="text-sm leading-relaxed [&_p]:text-white/70 [&_p]:mb-2">
+                <NotionBlocks blocks={bodyBlocks} />
+              </div>
+            ) : (
+              <p className="text-white/50 text-sm leading-relaxed">
+                想要結交一同熱愛學習生活的朋友，那就來參加領航里民活動，從讀書會、打羽球、劇本殺、密室逃脫、繪畫課等等各式各樣活動等待你一同加入。
+              </p>
+            )}
             <Link
               href="/events"
               className="mt-8 inline-block border border-white/30 text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors"

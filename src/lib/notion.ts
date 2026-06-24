@@ -139,12 +139,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 }
 
-export async function getHomePageSettings(): Promise<{ intro: string; taglineDesc: string }> {
-  const map = await parseKeyValueBlocks(HOMEPAGE_PAGE_ID)
-  return {
-    intro: map['首頁介紹'] ?? '',
-    taglineDesc: map['標語說明'] ?? '',
-  }
+export async function getHomePageBlocks(): Promise<NotionBlock[]> {
+  const res = await notion.blocks.children.list({ block_id: HOMEPAGE_PAGE_ID, page_size: 100 })
+  return res.results as NotionBlock[]
 }
 
 export async function getCollabBlocks(): Promise<NotionBlock[]> {
