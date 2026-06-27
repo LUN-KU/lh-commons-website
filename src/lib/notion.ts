@@ -158,12 +158,13 @@ export async function getSiteLinks(): Promise<SiteLink[]> {
     const text = block.paragraph?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''
     if (!text.includes(' | ')) continue
     const parts = text.split(' | ')
-    if (parts.length < 4) continue
+    if (parts.length < 3) continue
+    const has4 = parts.length >= 4
     links.push({
       emoji: parts[0].trim(),
       title: parts[1].trim(),
-      description: parts[2].trim(),
-      url: parts[3].trim(),
+      description: has4 ? parts[2].trim() : '',
+      url: has4 ? parts[3].trim() : parts[2].trim(),
     })
   }
   return links
