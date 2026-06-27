@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { eventId, eventName, paymentNote } = await req.json()
+  const { eventId, eventName, paymentNote, eventDate } = await req.json()
   if (!eventId || !eventName || !paymentNote) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
     eventName,
     session.user.email,
     session.user.name ?? '',
-    paymentNote
+    paymentNote,
+    eventDate
   )
 
   return NextResponse.json(result)

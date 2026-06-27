@@ -6,12 +6,13 @@ import PaymentInstructions from './PaymentInstructions'
 type Props = {
   eventId: string
   eventName: string
+  eventDate?: string
   eventStatus: string
   memberOnly: boolean
   isRegistered?: boolean
 }
 
-export default function RegisterButton({ eventId, eventName, eventStatus, memberOnly, isRegistered }: Props) {
+export default function RegisterButton({ eventId, eventName, eventDate, eventStatus, memberOnly, isRegistered }: Props) {
   const { data: session, status } = useSession()
   const [state, setState] = useState<'idle' | 'confirm' | 'success' | 'duplicate' | 'error'>(
     isRegistered ? 'duplicate' : 'idle'
@@ -84,7 +85,7 @@ export default function RegisterButton({ eventId, eventName, eventStatus, member
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, eventName, paymentNote: `${paymentMethod === 'bank' ? '銀行後5碼' : 'LINE Pay'}：${paymentNote}` }),
+        body: JSON.stringify({ eventId, eventName, eventDate, paymentNote: `${paymentMethod === 'bank' ? '銀行後5碼' : 'LINE Pay'}：${paymentNote}` }),
       })
       const data = await res.json()
       if (!res.ok) {

@@ -13,6 +13,7 @@ export type Registration = {
   memberEmail: string
   memberName: string
   registrationDate: string
+  eventDate?: string
   status: '已報名' | '已取消'
 }
 
@@ -96,6 +97,7 @@ export async function getAllRegistrations(): Promise<Registration[]> {
         memberEmail: (getProp(p['里民Email'], 'text') as string).trim().toLowerCase(),
         memberName: (getProp(p['姓名'], 'text') as string).trim(),
         registrationDate: getProp(p['報名時間'], 'date') as string,
+        eventDate: getProp(p['活動日期'], 'date') as string | undefined,
         status: getProp(p['狀態'], 'text') as '已報名' | '已取消',
       })
     }

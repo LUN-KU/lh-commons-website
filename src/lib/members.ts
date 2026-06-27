@@ -50,7 +50,8 @@ export async function registerForEvent(
   eventName: string,
   memberEmail: string,
   memberName: string,
-  paymentNote: string
+  paymentNote: string,
+  eventDate?: string
 ): Promise<{ ok: boolean; duplicate: boolean }> {
   const existing = await notion.databases.query({
     database_id: REGISTRATIONS_DB_ID,
@@ -74,6 +75,7 @@ export async function registerForEvent(
       '報名時間': { date: { start: new Date().toISOString() } },
       '狀態': { select: { name: '已報名' } },
       '付款備註': { rich_text: [{ text: { content: paymentNote } }] },
+      ...(eventDate ? { '活動日期': { date: { start: eventDate } } } : {}),
     },
   })
   return { ok: true, duplicate: false }
