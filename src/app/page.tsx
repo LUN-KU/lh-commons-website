@@ -4,7 +4,7 @@ import EventCard from '@/components/EventCard'
 import PhotoCarousel from '@/components/PhotoCarousel'
 import NotionBlocks from '@/components/NotionBlocks'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 const SERVICES = [
   { icon: '🎯', label: '目標設定陪跑' },
