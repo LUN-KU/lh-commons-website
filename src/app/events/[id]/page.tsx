@@ -94,7 +94,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <RegisterButton
             eventId={event.id}
             eventName={event.name}
-            eventDate={event.date}
+            eventDate={event.date ?? undefined}
             eventStatus={event.status}
             memberOnly={event.memberOnly}
             isRegistered={isRegistered}
