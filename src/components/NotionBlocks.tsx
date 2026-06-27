@@ -48,7 +48,7 @@ function youtubeEmbedUrl(url: string): string | null {
 
 export default function NotionBlocks({ blocks, dark = false }: { blocks: NotionBlock[]; dark?: boolean }) {
   const c = dark ? {
-    text: 'text-white/75 leading-relaxed text-[15px]',
+    text: 'text-white font-bold leading-relaxed text-lg',
     heading1: 'text-xl font-black text-white pb-2 border-b border-white/20',
     heading2: 'text-base font-bold text-white/90 flex items-center gap-2',
     heading2bar: 'w-1 h-4 bg-white/40 rounded-full inline-block flex-none',
