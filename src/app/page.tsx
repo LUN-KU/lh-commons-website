@@ -48,10 +48,10 @@ export default async function Home() {
               </p>
             )}
             <Link
-              href="/events"
+              href="/links"
               className="mt-8 inline-block border border-white/30 text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors"
             >
-              查看所有活動 →
+              一鍵入籍領航里 →
             </Link>
           </div>
 
