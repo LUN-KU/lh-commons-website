@@ -26,7 +26,14 @@ export default async function Home() {
   const sectionTitle = headingBlock
     ? (headingBlock[headingBlock.type]?.rich_text ?? []).map((t: any) => t.plain_text).join('')
     : '讓 Learn 成為你的 hobby'
-  const bodyBlocks = homeBlocks.filter(b => b !== headingBlock)
+  const bodyBlocks = homeBlocks.filter(b => {
+    if (b === headingBlock) return false
+    if (b.type === 'paragraph') {
+      const text = (b.paragraph?.rich_text ?? []).map((t: any) => t.plain_text).join('')
+      if (text.startsWith('# ')) return false
+    }
+    return true
+  })
 
   return (
     <div>
@@ -37,7 +44,6 @@ export default async function Home() {
 
           {/* Left: text */}
           <div>
-            <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-5">Activities</p>
             <h2 className="text-xl md:text-2xl font-bold text-white mb-5">{sectionTitle}</h2>
             <div className="w-14 h-0.5 bg-white/30 mb-6" />
             {bodyBlocks.length > 0 ? (
