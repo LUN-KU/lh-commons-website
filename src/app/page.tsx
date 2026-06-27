@@ -22,12 +22,8 @@ export default async function Home() {
   ])
   const upcoming = allEvents.filter(e => e.status === '報名中').slice(0, 3)
 
-  const headingBlock = homeBlocks.find(b => ['heading_1', 'heading_2', 'heading_3'].includes(b.type))
-  const sectionTitle = headingBlock
-    ? (headingBlock[headingBlock.type]?.rich_text ?? []).map((t: any) => t.plain_text).join('')
-    : '讓 Learn 成為你的 hobby'
   const bodyBlocks = homeBlocks.filter(b => {
-    if (b === headingBlock) return false
+    if (['heading_1', 'heading_2', 'heading_3'].includes(b.type)) return false
     if (b.type === 'paragraph') {
       const text = (b.paragraph?.rich_text ?? []).map((t: any) => t.plain_text).join('')
       if (text.startsWith('# ')) return false
@@ -44,8 +40,6 @@ export default async function Home() {
 
           {/* Left: text */}
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-5">{sectionTitle}</h2>
-            <div className="w-14 h-0.5 bg-white/30 mb-6" />
             {bodyBlocks.length > 0 ? (
               <NotionBlocks blocks={bodyBlocks} dark />
             ) : (
