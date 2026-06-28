@@ -37,7 +37,11 @@ export default function LoginButton() {
     const res = await signIn('email-login', { email, redirect: false })
     setEmailLoading(false)
     if (res?.error) {
-      setEmailError('找不到此 Email，請確認是否已加入領航里')
+      if (res.error.includes('PENDING')) {
+        setEmailError('申請審核中，請等待管理員核准後再登入')
+      } else {
+        setEmailError('找不到此 Email，請確認是否已加入領航里')
+      }
     } else {
       setShowForm(false)
     }

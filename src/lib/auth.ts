@@ -13,7 +13,9 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email) return null
         const member = await getMemberByEmail(credentials.email)
-        if (!member || member.status !== '啟用') return null
+        if (!member) throw new Error('NOT_FOUND')
+        if (member.status === '待審核') throw new Error('PENDING')
+        if (member.status !== '啟用') throw new Error('NOT_FOUND')
         return { id: member.id, email: member.email, name: member.name }
       },
     }),
