@@ -9,7 +9,7 @@ export type Member = {
   name: string
   email: string
   memberType: '一般里民' | '資深里民'
-  status: '啟用' | '停用'
+  status: '啟用' | '停用' | '待審核'
 }
 
 export async function getMemberByEmail(email: string): Promise<Member | null> {
