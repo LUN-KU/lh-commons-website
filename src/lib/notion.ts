@@ -60,10 +60,13 @@ function getText(prop: any): string {
 }
 
 export async function getEvents(): Promise<Event[]> {
-  const response = await notion.databases.query({
-    database_id: databaseId,
-    sorts: [{ property: '日期', direction: 'ascending' }],
-  })
+  let response
+  try {
+    response = await notion.databases.query({
+      database_id: databaseId,
+      sorts: [{ property: '日期', direction: 'ascending' }],
+    })
+  } catch { return [] }
 
   return response.results.map((page: any) => {
     const date = getText(page.properties['日期'])
@@ -140,34 +143,39 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function getHomePageBlocks(): Promise<NotionBlock[]> {
-  const res = await notion.blocks.children.list({ block_id: HOMEPAGE_PAGE_ID, page_size: 100 })
-  return res.results as NotionBlock[]
+  try {
+    const res = await notion.blocks.children.list({ block_id: HOMEPAGE_PAGE_ID, page_size: 100 })
+    return res.results as NotionBlock[]
+  } catch { return [] }
 }
 
 export async function getCollabBlocks(): Promise<NotionBlock[]> {
-  const res = await notion.blocks.children.list({ block_id: COLLAB_PAGE_ID, page_size: 100 })
-  return res.results as NotionBlock[]
+  try {
+    const res = await notion.blocks.children.list({ block_id: COLLAB_PAGE_ID, page_size: 100 })
+    return res.results as NotionBlock[]
+  } catch { return [] }
 }
 
 export async function getSiteLinks(): Promise<SiteLink[]> {
-  const res = await notion.blocks.children.list({ block_id: LINKS_PAGE_ID })
-  const blocks = res.results as any[]
-
-  const links: SiteLink[] = []
-  for (const block of blocks) {
-    const text = block.paragraph?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''
-    if (!text.includes(' | ')) continue
-    const parts = text.split(' | ')
-    if (parts.length < 3) continue
-    const has4 = parts.length >= 4
-    links.push({
-      emoji: parts[0].trim(),
-      title: parts[1].trim(),
-      description: has4 ? parts[2].trim() : '',
-      url: has4 ? parts[3].trim() : parts[2].trim(),
-    })
-  }
-  return links
+  try {
+    const res = await notion.blocks.children.list({ block_id: LINKS_PAGE_ID })
+    const blocks = res.results as any[]
+    const links: SiteLink[] = []
+    for (const block of blocks) {
+      const text = block.paragraph?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''
+      if (!text.includes(' | ')) continue
+      const parts = text.split(' | ')
+      if (parts.length < 3) continue
+      const has4 = parts.length >= 4
+      links.push({
+        emoji: parts[0].trim(),
+        title: parts[1].trim(),
+        description: has4 ? parts[2].trim() : '',
+        url: has4 ? parts[3].trim() : parts[2].trim(),
+      })
+    }
+    return links
+  } catch { return [] }
 }
 
 export type NotionBlock = {
@@ -178,21 +186,25 @@ export type NotionBlock = {
 }
 
 export async function getEventBlocks(pageId: string): Promise<NotionBlock[]> {
-  const res = await notion.blocks.children.list({ block_id: pageId, page_size: 100 })
-  return res.results as NotionBlock[]
+  try {
+    const res = await notion.blocks.children.list({ block_id: pageId, page_size: 100 })
+    return res.results as NotionBlock[]
+  } catch { return [] }
 }
 
 // 首頁活動介紹圖頁面 ID
 const ACTIVITY_FEATURED_PAGE_ID = '37c6dc6ec22281c9bf6cc261dd02bb65'
 
 export async function getActivityFeaturedImage(): Promise<string | null> {
-  const res = await notion.blocks.children.list({ block_id: ACTIVITY_FEATURED_PAGE_ID, page_size: 10 })
-  for (const block of res.results as any[]) {
-    if (block.type === 'image') {
-      const img = block.image
-      return img.type === 'file' ? img.file.url : img.external?.url ?? null
+  try {
+    const res = await notion.blocks.children.list({ block_id: ACTIVITY_FEATURED_PAGE_ID, page_size: 10 })
+    for (const block of res.results as any[]) {
+      if (block.type === 'image') {
+        const img = block.image
+        return img.type === 'file' ? img.file.url : img.external?.url ?? null
+      }
     }
-  }
+  } catch { /* ignore */ }
   return null
 }
 

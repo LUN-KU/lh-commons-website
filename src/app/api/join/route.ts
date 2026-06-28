@@ -6,10 +6,26 @@ const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const MEMBERS_DB_ID = process.env.NOTION_MEMBERS_DATABASE_ID!
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { type, seniorPlan, name, nickname, gender, birthday, ig, email, phone, interests, bankCode, note } = body
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+  const type = typeof body.type === 'string' ? body.type : ''
+  const seniorPlan = typeof body.seniorPlan === 'string' ? body.seniorPlan : ''
+  const name = typeof body.name === 'string' ? body.name : ''
+  const nickname = typeof body.nickname === 'string' ? body.nickname : ''
+  const gender = typeof body.gender === 'string' ? body.gender : ''
+  const birthday = typeof body.birthday === 'string' ? body.birthday : ''
+  const ig = typeof body.ig === 'string' ? body.ig : ''
+  const email = typeof body.email === 'string' ? body.email : ''
+  const phone = typeof body.phone === 'string' ? body.phone : ''
+  const bankCode = typeof body.bankCode === 'string' ? body.bankCode : ''
+  const note = typeof body.note === 'string' ? body.note : ''
+  const interests = Array.isArray(body.interests) ? (body.interests as string[]) : []
 
-  if (!name || !nickname || !gender || !email || !phone || !interests?.length || !type) {
+  if (!name || !nickname || !gender || !email || !phone || !interests.length || !type) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
   if (type === 'senior' && !bankCode) {
