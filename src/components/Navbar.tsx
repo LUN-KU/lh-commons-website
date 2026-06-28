@@ -19,8 +19,10 @@ export default function Navbar() {
     <nav className="bg-brand-800/70 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="領航里" className="flex-none w-14 h-14 object-contain" />
+          <span className="flex-none w-14 h-14 rounded-full bg-white flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="領航里" className="w-10 h-10 object-contain" />
+          </span>
           <span className="text-lg font-bold text-white tracking-widest">領航里里民活動</span>
         </Link>
 
