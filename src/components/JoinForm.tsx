@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PaymentInstructions from './PaymentInstructions'
 
 const INTERESTS = ['讀書會', '一日遊', '桌遊', '派對', '運動', '專業講座', '興趣培養', '活動揪團', '包團出國']
@@ -12,6 +12,12 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
   const [memberType, setMemberType] = useState<MemberType>(defaultType)
   const [seniorPlan, setSeniorPlan] = useState<SeniorPlan>('1.0')
   const [formState, setFormState] = useState<FormState>('idle')
+  const [formToken, setFormToken] = useState('')
+  const [honeypot, setHoneypot] = useState('')
+
+  useEffect(() => {
+    fetch('/api/join-token').then(r => r.json()).then(d => setFormToken(d.token)).catch(() => {})
+  }, [])
 
   const [name, setName] = useState('')
   const [nickname, setNickname] = useState('')
@@ -51,6 +57,8 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
           interests: allInterests,
           bankCode,
           note,
+          website: honeypot,
+          _t: formToken,
         }),
       })
       const data = await res.json()
@@ -87,6 +95,11 @@ export default function JoinForm({ defaultType = 'regular' }: { defaultType?: Me
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* 蜜罐：機器人陷阱，人類看不到 */}
+      <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
+      </div>
 
       {/* 類型切換 */}
       <div className="flex rounded-2xl overflow-hidden border border-white/20">

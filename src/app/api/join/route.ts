@@ -1,9 +1,23 @@
 import { Client } from '@notionhq/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendJoinNotification } from '@/lib/email'
+import { createHmac } from 'crypto'
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const MEMBERS_DB_ID = process.env.NOTION_MEMBERS_DATABASE_ID!
+
+function verifyToken(token: string): boolean {
+  const secret = process.env.ADMIN_SECRET ?? 'fallback-secret'
+  const parts = token.split(':')
+  if (parts.length !== 2) return false
+  const [slotStr, sig] = parts
+  const slot = parseInt(slotStr, 10)
+  const now = Math.floor(Date.now() / (30 * 60 * 1000))
+  // 允許當前 slot 或前一個 slot（最多 1 小時有效）
+  if (slot !== now && slot !== now - 1) return false
+  const expected = createHmac('sha256', secret).update(`join:${slot}`).digest('hex')
+  return sig === expected
+}
 
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>
@@ -12,6 +26,18 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
+
+  // 蜜罐：機器人會填這個欄位，人類不會看到
+  if (typeof body.website === 'string' && body.website !== '') {
+    return NextResponse.json({ ok: true }) // 假裝成功，不留痕跡
+  }
+
+  // Token 驗證：確保請求來自真正的表單頁面
+  const token = typeof body._t === 'string' ? body._t : ''
+  if (!verifyToken(token)) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 403 })
+  }
+
   const type = typeof body.type === 'string' ? body.type : ''
   const seniorPlan = typeof body.seniorPlan === 'string' ? body.seniorPlan : ''
   const name = typeof body.name === 'string' ? body.name : ''
