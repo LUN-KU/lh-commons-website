@@ -1,6 +1,7 @@
 'use client'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function LoginButton() {
   const { data: session, status } = useSession()
@@ -22,6 +23,12 @@ export default function LoginButton() {
         <span className="text-xs text-white/60 hidden sm:block">
           {isSenior ? '⭐ 資深里民' : '里民'}
         </span>
+        <Link
+          href="/member"
+          className="text-sm text-white/80 hover:text-white transition-colors"
+        >
+          我的點數
+        </Link>
         <button
           onClick={() => signOut()}
           className="text-sm text-white/60 hover:text-white border border-white/20 px-3 py-1 rounded-full hover:border-white/50 transition-colors"

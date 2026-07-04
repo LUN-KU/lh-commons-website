@@ -31,6 +31,53 @@ export async function getMemberByEmail(email: string): Promise<Member | null> {
   }
 }
 
+export type MemberPoints = {
+  pageId: string
+  balance: number
+  total: number
+  redeemedEvents: string[]
+}
+
+function parseRedeemed(prop: any): string[] {
+  const text = prop?.rich_text?.map((t: any) => t.plain_text).join('') ?? ''
+  return text.split(',').map((s: string) => s.trim()).filter(Boolean)
+}
+
+export async function getMemberPointsByEmail(email: string): Promise<MemberPoints | null> {
+  const res = await notion.databases.query({
+    database_id: MEMBERS_DB_ID,
+    filter: {
+      property: 'Email',
+      email: { equals: email },
+    },
+  })
+  if (!res.results.length) return null
+  const page = res.results[0] as any
+  return {
+    pageId: page.id,
+    balance: page.properties['點數餘額']?.number ?? 0,
+    total: page.properties['累積點數']?.number ?? 0,
+    redeemedEvents: parseRedeemed(page.properties['已集點活動']),
+  }
+}
+
+// 集點：加點並記錄已集點活動（呼叫端須先確認 eventId 不在 current.redeemedEvents）
+export async function addMemberPoints(
+  current: MemberPoints,
+  eventId: string,
+  points: number
+): Promise<void> {
+  const redeemed = [...current.redeemedEvents, eventId]
+  await notion.pages.update({
+    page_id: current.pageId,
+    properties: {
+      '點數餘額': { number: current.balance + points },
+      '累積點數': { number: current.total + points },
+      '已集點活動': { rich_text: [{ text: { content: redeemed.join(',') } }] },
+    },
+  })
+}
+
 export async function isUserRegistered(eventId: string, memberEmail: string): Promise<boolean> {
   const res = await notion.databases.query({
     database_id: REGISTRATIONS_DB_ID,

@@ -229,6 +229,37 @@ export async function getActivityPhotos(): Promise<string[]> {
   } catch { return [] }
 }
 
+export type RedeemEvent = {
+  id: string
+  name: string
+  points: number
+  expired: boolean
+}
+
+// 用集點密碼反查活動：活動 DB 需有「集點密碼」「集點截止」（選填「集點點數」，預設 10）
+export async function findEventByRedeemCode(code: string): Promise<RedeemEvent | null> {
+  let res
+  try {
+    res = await notion.databases.query({
+      database_id: databaseId,
+      filter: { property: '集點密碼', rich_text: { equals: code } },
+    })
+  } catch {
+    return null
+  }
+  if (!res.results.length) return null
+  const page = res.results[0] as any
+  const deadline = page.properties['集點截止']?.date?.start ?? null
+  const expired = deadline ? Date.now() > Date.parse(deadline) : false
+  const pts = page.properties['集點點數']?.number
+  return {
+    id: page.id,
+    name: getText(page.properties['活動名稱']),
+    points: typeof pts === 'number' && pts > 0 ? pts : 10,
+    expired,
+  }
+}
+
 export async function getEvent(id: string): Promise<Event | null> {
   try {
     const page: any = await notion.pages.retrieve({ page_id: id })
