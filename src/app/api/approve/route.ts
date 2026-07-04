@@ -1,6 +1,7 @@
 import { Client } from '@notionhq/client'
 import { NextRequest, NextResponse } from 'next/server'
-import { sendApprovalEmail } from '@/lib/email'
+import { sendApprovalEmail, escapeHtml } from '@/lib/email'
+import { isValidApproveSig } from '@/lib/adminAuth'
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const MEMBERS_DB_ID = process.env.NOTION_MEMBERS_DATABASE_ID!
@@ -8,9 +9,9 @@ const MEMBERS_DB_ID = process.env.NOTION_MEMBERS_DATABASE_ID!
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const email = searchParams.get('email')
-  const secret = searchParams.get('secret')
+  const sig = searchParams.get('sig')
 
-  if (!email || !secret || secret !== process.env.ADMIN_SECRET) {
+  if (!email || !isValidApproveSig(email, sig)) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
@@ -58,7 +59,8 @@ export async function GET(req: NextRequest) {
   })
 }
 
-function approvedPage(email: string, alreadyApproved: boolean) {
+function approvedPage(rawEmail: string, alreadyApproved: boolean) {
+  const email = escapeHtml(rawEmail)
   const title = alreadyApproved ? '已是啟用狀態' : '核准成功 ✅'
   const msg = alreadyApproved
     ? `${email} 的狀態已是「啟用」，無需重複操作。`

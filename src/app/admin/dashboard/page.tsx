@@ -2,12 +2,12 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getAllRegistrations, getCostRecords, getEventsWithMap, getAllMembers, computeStats } from '@/lib/adminData'
 import DashboardCharts from './DashboardCharts'
+import { isAdminCookie } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const token = cookies().get('lh_admin')?.value
-  if (!token || token !== process.env.ADMIN_SECRET) {
+  if (!isAdminCookie(cookies().get('lh_admin')?.value)) {
     redirect('/admin')
   }
 

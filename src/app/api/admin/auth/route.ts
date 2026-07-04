@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminCookieValue } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
-  const { password } = await req.json()
+  let body: { password?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
-  if (!password || password !== process.env.ADMIN_SECRET) {
+  if (!body.password || !process.env.ADMIN_SECRET || body.password !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const res = NextResponse.json({ ok: true })
-  res.cookies.set('lh_admin', process.env.ADMIN_SECRET!, {
+  res.cookies.set('lh_admin', adminCookieValue(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

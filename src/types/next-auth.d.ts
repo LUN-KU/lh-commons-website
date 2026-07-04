@@ -2,6 +2,9 @@ import NextAuth from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 
 declare module 'next-auth' {
+  interface User {
+    memberType?: string
+  }
   interface Session {
     user: {
       name?: string | null

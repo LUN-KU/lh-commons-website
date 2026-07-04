@@ -1,9 +1,19 @@
 import { Resend } from 'resend'
+import { approveSig } from './adminAuth'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const ADMIN_EMAIL = 'ejej4093@gmail.com'
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://lh-commons-website.vercel.app'
 const FROM = '領航里 <onboarding@resend.dev>'
+
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 export async function sendJoinNotification(params: {
   name: string
@@ -16,12 +26,19 @@ export async function sendJoinNotification(params: {
   interests: string[]
   note?: string
 }) {
-  const { name, email, phone, type, seniorPlan, bankCode, ig, interests, note } = params
-  const planLabel = type === 'senior'
-    ? (seniorPlan === '2.0' ? '理想領航員 2.0（$1,980）' : '資深里民 1.0（$720）')
+  const planLabel = params.type === 'senior'
+    ? (params.seniorPlan === '2.0' ? '理想領航員 2.0（$1,980）' : '資深里民 1.0（$720）')
     : '一般里民'
 
-  const approveUrl = `${SITE_URL}/api/approve?email=${encodeURIComponent(email)}&secret=${encodeURIComponent(process.env.ADMIN_SECRET!)}`
+  const name = escapeHtml(params.name)
+  const email = escapeHtml(params.email)
+  const phone = escapeHtml(params.phone)
+  const ig = params.ig ? escapeHtml(params.ig) : ''
+  const bankCode = params.bankCode ? escapeHtml(params.bankCode) : ''
+  const note = params.note ? escapeHtml(params.note) : ''
+  const interests = params.interests.map(escapeHtml)
+
+  const approveUrl = `${SITE_URL}/api/approve?email=${encodeURIComponent(params.email)}&sig=${approveSig(params.email)}`
 
   await resend.emails.send({
     from: FROM,
@@ -89,7 +106,7 @@ export async function sendApprovalEmail(params: {
     subject: `歡迎加入領航里！你的${planLabel}申請已通過 🎉`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h2 style="color:#1e40af">Hi ${name}，歡迎加入領航里！ 🎉</h2>
+        <h2 style="color:#1e40af">Hi ${escapeHtml(name)}，歡迎加入領航里！ 🎉</h2>
         <p style="color:#374151">你的 <strong>${planLabel}</strong> 申請已通過審核。</p>
         <div style="background:#eff6ff;border-radius:12px;padding:16px;margin:16px 0">
           <p style="color:#1e40af;font-weight:bold;margin:0 0 8px">你的會員福利：</p>
@@ -104,6 +121,24 @@ export async function sendApprovalEmail(params: {
           <p style="color:#6b7280;font-size:14px;margin:0">有任何問題，歡迎私訊聯絡我們：</p>
           <p style="color:#6b7280;font-size:14px;margin:4px 0">Line：@850frpmp　IG：@l.h_commons</p>
         </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendLoginCodeEmail(email: string, code: string) {
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `【領航里】登入驗證碼：${code}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+        <h2 style="color:#1e40af">里民登入驗證碼</h2>
+        <p style="color:#374151">請在登入視窗輸入以下驗證碼（10 分鐘內有效）：</p>
+        <div style="background:#eff6ff;border-radius:12px;padding:20px;text-align:center;margin:16px 0">
+          <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#1e40af">${code}</span>
+        </div>
+        <p style="color:#9ca3af;font-size:12px">如果這不是你本人的操作，請忽略此信。</p>
       </div>
     `,
   })

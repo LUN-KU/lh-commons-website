@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getUpcomingEvents, getAllRegistrations } from '@/lib/adminData'
+import { isAdminCookie } from '@/lib/adminAuth'
+import { escapeHtml } from '@/lib/email'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = '領航里 <onboarding@resend.dev>'
 
 function isAuthorized(req: NextRequest): boolean {
   const authHeader = req.headers.get('authorization')
-  const querySecret = req.nextUrl.searchParams.get('secret')
-  const cookieVal = req.cookies.get('lh_admin')?.value
   const cronSecret = process.env.CRON_SECRET
-  const adminSecret = process.env.ADMIN_SECRET
 
   return (
     (!!cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-    (!!adminSecret && querySecret === adminSecret) ||
-    (!!adminSecret && cookieVal === adminSecret)
+    isAdminCookie(req.cookies.get('lh_admin')?.value)
   )
 }
 
@@ -48,7 +46,7 @@ export async function GET(req: NextRequest) {
           html: `
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
               <h2 style="color:#1e40af">活動即將開始 ⏰</h2>
-              <p style="color:#374151">Hi ${reg.memberName}，你報名的活動還有 <strong>3 天</strong>就要開始了！</p>
+              <p style="color:#374151">Hi ${escapeHtml(reg.memberName)}，你報名的活動還有 <strong>3 天</strong>就要開始了！</p>
               <div style="background:#eff6ff;border-radius:12px;padding:20px;margin:16px 0">
                 <p style="color:#1e40af;font-weight:bold;font-size:18px;margin:0 0 8px">${event.name}</p>
                 ${event.date ? `<p style="color:#374151;margin:4px 0">📅 日期：${event.date}</p>` : ''}

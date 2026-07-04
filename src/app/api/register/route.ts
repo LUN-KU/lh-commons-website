@@ -9,7 +9,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { eventId, eventName, paymentNote, eventDate } = await req.json()
+  let body: { eventId?: string; eventName?: string; paymentNote?: string; eventDate?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+  const { eventId, eventName, paymentNote, eventDate } = body
   if (!eventId || !eventName || !paymentNote) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }

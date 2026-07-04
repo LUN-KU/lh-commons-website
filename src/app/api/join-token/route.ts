@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
+import { makeJoinToken } from '@/lib/adminAuth'
 
-function makeToken(): string {
-  const secret = process.env.ADMIN_SECRET ?? 'fallback-secret'
-  const slot = Math.floor(Date.now() / (30 * 60 * 1000)) // 30分鐘一個 slot
-  const sig = createHmac('sha256', secret).update(`join:${slot}`).digest('hex')
-  return `${slot}:${sig}`
-}
+export const dynamic = 'force-dynamic'
 
 export function GET() {
-  return NextResponse.json({ token: makeToken() })
+  const token = makeJoinToken()
+  if (!token) {
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+  }
+  return NextResponse.json({ token })
 }

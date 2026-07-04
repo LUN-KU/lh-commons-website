@@ -133,7 +133,10 @@ async function parseKeyValueBlocks(pageId: string): Promise<Record<string, strin
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const map = await parseKeyValueBlocks(ABOUT_PAGE_ID)
+  let map: Record<string, string> = {}
+  try {
+    map = await parseKeyValueBlocks(ABOUT_PAGE_ID)
+  } catch { /* Notion 失敗時使用預設值 */ }
   return {
     about: map['關於我們介紹'] ?? '',
     joinUs: map['加入我們說明'] ?? '',
@@ -212,16 +215,18 @@ export async function getActivityFeaturedImage(): Promise<string | null> {
 const ACTIVITY_PHOTOS_PAGE_ID = '37c6dc6ec22281b284d6ea0e3e5f7ff2'
 
 export async function getActivityPhotos(): Promise<string[]> {
-  const res = await notion.blocks.children.list({ block_id: ACTIVITY_PHOTOS_PAGE_ID, page_size: 50 })
-  const urls: string[] = []
-  for (const block of res.results as any[]) {
-    if (block.type === 'image') {
-      const img = block.image
-      const url = img.type === 'file' ? img.file.url : img.external?.url
-      if (url) urls.push(url)
+  try {
+    const res = await notion.blocks.children.list({ block_id: ACTIVITY_PHOTOS_PAGE_ID, page_size: 50 })
+    const urls: string[] = []
+    for (const block of res.results as any[]) {
+      if (block.type === 'image') {
+        const img = block.image
+        const url = img.type === 'file' ? img.file.url : img.external?.url
+        if (url) urls.push(url)
+      }
     }
-  }
-  return urls.slice(0, 6)
+    return urls.slice(0, 6)
+  } catch { return [] }
 }
 
 export async function getEvent(id: string): Promise<Event | null> {
