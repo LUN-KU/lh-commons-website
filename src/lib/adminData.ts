@@ -108,13 +108,21 @@ export async function getAllRegistrations(): Promise<Registration[]> {
 }
 
 export async function getCostRecords(): Promise<CostRecord[]> {
-  const res: any = await notion.databases.query({
-    database_id: COST_TABLE_DB,
-    page_size: 100,
-    sorts: [{ property: '活動日期', direction: 'descending' }],
-  })
+  const allResults: any[] = []
+  let cursor: string | undefined
 
-  return (res.results as any[]).map((page: any) => {
+  do {
+    const res: any = await notion.databases.query({
+      database_id: COST_TABLE_DB,
+      page_size: 100,
+      start_cursor: cursor,
+      sorts: [{ property: '活動日期', direction: 'descending' }],
+    })
+    allResults.push(...res.results)
+    cursor = res.has_more ? res.next_cursor : undefined
+  } while (cursor)
+
+  return allResults.map((page: any) => {
     const p = page.properties
     const totalCost = getProp(p['總成本'], 'number') as number
     const totalRevenue = getProp(p['總收入'], 'number') as number
