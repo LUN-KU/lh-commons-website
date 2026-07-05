@@ -1,20 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getCostRecords } from '@/lib/adminData'
 
-export async function GET(req: NextRequest) {
-  const cookie = req.cookies.get('lh_admin')?.value
-  if (!cookie || cookie !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export async function GET() {
   const costRecords = await getCostRecords()
   return NextResponse.json({
     total: costRecords.length,
-    records: costRecords.map(c => ({
-      name: c.name,
-      category: c.category,
-      date: c.eventDate,
-      revenue: c.totalRevenue,
-    })),
+    personalService: costRecords
+      .filter(c => c.category === '個人服務')
+      .map(c => ({ name: c.name, date: c.eventDate, revenue: c.totalRevenue })),
+    allDates: costRecords.map(c => c.eventDate).sort(),
   })
 }
