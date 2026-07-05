@@ -405,7 +405,6 @@ export function computeStats(
       }
     })
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 20)
 
   // Monthly revenue (last 12 months) — 用有效收入（Notion 或 auto）
   const monthRevMap = new Map<string, number>()
