@@ -25,9 +25,10 @@ export async function GET(req: NextRequest) {
   const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
 
   function getEffectiveDate(r: { eventId: string; eventName: string; registrationDate: string }): string {
-    if (r.registrationDate) return r.registrationDate.slice(0, 10)
+    // 優先用活動日期（活動實際發生時間），與 member-history 一致，避免提前報名未來活動被誤判回流
     if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
     if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
+    if (r.registrationDate) return r.registrationDate.slice(0, 10)
     return ''
   }
 
