@@ -22,6 +22,12 @@ export default function RegisterButton({ eventId, eventName, eventDate, eventSta
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'linepay'>('bank')
   const [paymentNote, setPaymentNote] = useState('')
 
+  const [loginStep, setLoginStep] = useState<'idle' | 'email' | 'code'>('idle')
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginCode, setLoginCode] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+
   if (eventStatus === '已結束') {
     return (
       <div className="w-full text-center bg-white/10 text-white/30 font-bold py-4 rounded-2xl text-base">
@@ -44,14 +50,129 @@ export default function RegisterButton({ eventId, eventName, eventDate, eventSta
     return <div className="w-full h-14 bg-white/10 rounded-2xl animate-pulse" />
   }
 
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError('')
+    setLoginLoading(true)
+    try {
+      const res = await fetch('/api/login-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setLoginStep('code')
+      } else if (data.error === 'PENDING') {
+        setLoginError('申請審核中，請等待管理員核准後再登入')
+      } else if (data.error === 'SERVICE') {
+        setLoginError('系統忙碌中，請稍後再試')
+      } else {
+        setLoginError('找不到此 Email，請確認是否已加入領航里')
+      }
+    } catch {
+      setLoginError('系統忙碌中，請稍後再試')
+    }
+    setLoginLoading(false)
+  }
+
+  const handleCodeLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError('')
+    setLoginLoading(true)
+    const res = await signIn('email-login', { email: loginEmail, code: loginCode, redirect: false })
+    setLoginLoading(false)
+    if (res?.error) {
+      if (res.error.includes('CODE')) {
+        setLoginError('驗證碼錯誤或已過期，請重新輸入')
+      } else if (res.error.includes('PENDING')) {
+        setLoginError('申請審核中，請等待管理員核准後再登入')
+      } else if (res.error.includes('SERVICE')) {
+        setLoginError('系統忙碌中，請稍後再試')
+      } else {
+        setLoginError('找不到此 Email，請確認是否已加入領航里')
+      }
+    } else {
+      setLoginStep('idle')
+      setLoginEmail('')
+      setLoginCode('')
+    }
+  }
+
   if (!session) {
+    if (loginStep === 'idle') {
+      return (
+        <button
+          onClick={() => setLoginStep('email')}
+          className="block w-full text-center bg-white text-brand-800 font-bold py-4 rounded-2xl hover:bg-brand-50 transition-colors shadow-lg text-base"
+        >
+          登入後報名
+        </button>
+      )
+    }
+
     return (
-      <button
-        onClick={() => signIn('google')}
-        className="block w-full text-center bg-white text-brand-800 font-bold py-4 rounded-2xl hover:bg-brand-50 transition-colors shadow-lg text-base"
-      >
-        登入後報名
-      </button>
+      <div className="bg-white rounded-2xl p-5 space-y-3 shadow-xl">
+        {loginStep === 'email' ? (
+          <form onSubmit={handleSendCode} className="space-y-2">
+            <label className="text-xs text-gray-400 block">輸入加入時的 Email</label>
+            <input
+              type="email"
+              value={loginEmail}
+              onChange={e => setLoginEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              autoFocus
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-brand-400"
+            />
+            {loginError && <p className="text-xs text-red-500">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60"
+            >
+              {loginLoading ? '寄送中...' : '寄送驗證碼'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleCodeLogin} className="space-y-2">
+            <label className="text-xs text-gray-400 block">驗證碼已寄到 {loginEmail}</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              value={loginCode}
+              onChange={e => setLoginCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="6 位數驗證碼"
+              required
+              autoFocus
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 tracking-widest text-center focus:outline-none focus:border-brand-400"
+            />
+            {loginError && <p className="text-xs text-red-500">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginLoading || loginCode.length !== 6}
+              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60"
+            >
+              {loginLoading ? '驗證中...' : '登入'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginStep('email'); setLoginCode(''); setLoginError('') }}
+              className="w-full text-xs text-gray-400 hover:text-gray-500 py-1"
+            >
+              重新輸入 Email
+            </button>
+          </form>
+        )}
+        <button
+          onClick={() => { setLoginStep('idle'); setLoginEmail(''); setLoginCode(''); setLoginError('') }}
+          className="w-full text-xs text-gray-300 hover:text-gray-400 py-1"
+        >
+          取消
+        </button>
+      </div>
     )
   }
 

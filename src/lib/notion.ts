@@ -2,6 +2,7 @@ import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const databaseId = process.env.NOTION_DATABASE_ID!
+const REGISTRATIONS_DB_ID = process.env.NOTION_REGISTRATIONS_DATABASE_ID!
 
 export type Event = {
   id: string
@@ -19,6 +20,54 @@ export type Event = {
   coverImage: string | null
   iconImage: string | null
   memberOnly: boolean
+  targetCount: number | null
+  registeredCount: number
+}
+
+// 統計所有活動的已報名人數（單次查詢，依 活動ID 分組）
+async function getAllRegisteredCounts(): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {}
+  try {
+    let cursor: string | undefined
+    do {
+      const res = await notion.databases.query({
+        database_id: REGISTRATIONS_DB_ID,
+        filter: { property: '狀態', select: { equals: '已報名' } },
+        start_cursor: cursor,
+        page_size: 100,
+      })
+      for (const page of res.results as any[]) {
+        const id = getText(page.properties['活動ID'])
+        if (id) counts[id] = (counts[id] ?? 0) + 1
+      }
+      cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined
+    } while (cursor)
+  } catch { /* 查詢失敗時視為 0，不影響活動列表顯示 */ }
+  return counts
+}
+
+// 統計單一活動的已報名人數
+async function getRegisteredCount(eventId: string): Promise<number> {
+  let count = 0
+  try {
+    let cursor: string | undefined
+    do {
+      const res = await notion.databases.query({
+        database_id: REGISTRATIONS_DB_ID,
+        filter: {
+          and: [
+            { property: '活動ID', rich_text: { equals: eventId } },
+            { property: '狀態', select: { equals: '已報名' } },
+          ],
+        },
+        start_cursor: cursor,
+        page_size: 100,
+      })
+      count += res.results.length
+      cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined
+    } while (cursor)
+  } catch { return 0 }
+  return count
 }
 
 function getCover(page: any): string | null {
@@ -37,16 +86,30 @@ function getIcon(page: any): string | null {
 
 // 根據活動日期 + 結束時間自動判斷是否已結束（結束後 30 分鐘）
 // 時間格式支援：14:00-16:00、14:00 – 16:00、14:00
-function autoStatus(date: string | null, time: string, notionStatus: string): string {
-  if (!date || notionStatus === '已結束') return notionStatus
-  const matches = time.match(/(\d{1,2}):(\d{2})/g)
-  if (!matches || matches.length === 0) return notionStatus
-  const endStr = matches[matches.length - 1]
-  const [h, m] = endStr.split(':').map(Number)
-  // 以台灣時間（UTC+8）建立結束時間
-  const endMs = Date.parse(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+08:00`)
-  if (isNaN(endMs)) return notionStatus
-  return Date.now() > endMs + 30 * 60 * 1000 ? '已結束' : notionStatus
+// 並在已設定「目標人數」且已報名人數達標時自動轉為「額滿」
+function autoStatus(
+  date: string | null,
+  time: string,
+  notionStatus: string,
+  targetCount: number | null,
+  registeredCount: number
+): string {
+  if (notionStatus === '已結束') return notionStatus
+
+  if (date) {
+    const matches = time.match(/(\d{1,2}):(\d{2})/g)
+    if (matches && matches.length > 0) {
+      const [h, m] = matches[matches.length - 1].split(':').map(Number)
+      // 以台灣時間（UTC+8）建立結束時間
+      const endMs = Date.parse(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+08:00`)
+      if (!isNaN(endMs) && Date.now() > endMs + 30 * 60 * 1000) return '已結束'
+    }
+  }
+
+  if (notionStatus === '額滿') return '額滿'
+  if (typeof targetCount === 'number' && targetCount > 0 && registeredCount >= targetCount) return '額滿'
+
+  return notionStatus
 }
 
 function getText(prop: any): string {
@@ -68,10 +131,14 @@ export async function getEvents(): Promise<Event[]> {
     })
   } catch { return [] }
 
+  const counts = await getAllRegisteredCounts()
+
   return response.results.map((page: any) => {
     const date = getText(page.properties['日期'])
     const time = getText(page.properties['時間'])
     const notionStatus = getText(page.properties['狀態'])
+    const targetCount = page.properties['目標人數']?.number ?? null
+    const registeredCount = counts[page.id] ?? 0
     return {
       id: page.id,
       name: getText(page.properties['活動名稱']),
@@ -84,10 +151,12 @@ export async function getEvents(): Promise<Event[]> {
       memberFee: getText(page.properties['資深里民費用']),
       earlyFee: getText(page.properties['早鳥里民費用']),
       registrationUrl: getText(page.properties['報名連結']) || null,
-      status: autoStatus(date, time, notionStatus),
+      status: autoStatus(date, time, notionStatus, targetCount, registeredCount),
       coverImage: getCover(page),
       iconImage: getIcon(page),
       memberOnly: page.properties['會員限定']?.checkbox ?? false,
+      targetCount,
+      registeredCount,
     }
   })
 }
@@ -266,6 +335,8 @@ export async function getEvent(id: string): Promise<Event | null> {
     const date = getText(page.properties['日期'])
     const time = getText(page.properties['時間'])
     const notionStatus = getText(page.properties['狀態'])
+    const targetCount = page.properties['目標人數']?.number ?? null
+    const registeredCount = await getRegisteredCount(id)
     return {
       id: page.id,
       name: getText(page.properties['活動名稱']),
@@ -278,10 +349,12 @@ export async function getEvent(id: string): Promise<Event | null> {
       memberFee: getText(page.properties['資深里民費用']),
       earlyFee: getText(page.properties['早鳥里民費用']),
       registrationUrl: getText(page.properties['報名連結']) || null,
-      status: autoStatus(date, time, notionStatus),
+      status: autoStatus(date, time, notionStatus, targetCount, registeredCount),
       coverImage: getCover(page),
       iconImage: getIcon(page),
       memberOnly: page.properties['會員限定']?.checkbox ?? false,
+      targetCount,
+      registeredCount,
     }
   } catch {
     return null
