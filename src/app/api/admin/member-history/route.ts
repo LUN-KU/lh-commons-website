@@ -14,7 +14,12 @@ export async function GET(req: NextRequest) {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
   const cutoff = sixMonthsAgo.toISOString().slice(0, 10)
 
-  const [allRegistrations, { events }] = await Promise.all([getAllRegistrations(), getEventsWithMap()])
+  let allRegistrations, events
+  try {
+    ;[allRegistrations, { events }] = await Promise.all([getAllRegistrations(), getEventsWithMap()])
+  } catch {
+    return NextResponse.json({ error: 'Notion 讀取失敗，請稍後再試' }, { status: 503 })
+  }
   const idx = buildEventIndexes(events)
 
   const history = allRegistrations

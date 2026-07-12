@@ -7,6 +7,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const result = await syncEventsToBrandPL()
-  return NextResponse.json(result)
+  try {
+    const result = await syncEventsToBrandPL()
+    return NextResponse.json(result)
+  } catch {
+    return NextResponse.json({ error: 'Notion 讀取失敗，請稍後再試' }, { status: 503 })
+  }
 }

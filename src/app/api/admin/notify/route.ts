@@ -22,13 +22,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const events = await getUpcomingEvents(3)
-
-  if (events.length === 0) {
-    return NextResponse.json({ sent: 0, message: '沒有 3 天後的活動' })
+  let events, registrations
+  try {
+    events = await getUpcomingEvents(3)
+    if (events.length === 0) {
+      return NextResponse.json({ sent: 0, message: '沒有 3 天後的活動' })
+    }
+    registrations = await getAllRegistrations()
+  } catch {
+    return NextResponse.json({ error: 'Notion 讀取失敗，請稍後再試' }, { status: 503 })
   }
-
-  const registrations = await getAllRegistrations()
   const active = registrations.filter(r => r.status === '已報名')
 
   let sent = 0

@@ -124,14 +124,16 @@ function getText(prop: any): string {
 
 export async function getEvents(): Promise<Event[]> {
   let response
+  let counts: Record<string, number>
   try {
-    response = await notion.databases.query({
-      database_id: databaseId,
-      sorts: [{ property: '日期', direction: 'ascending' }],
-    })
+    ;[response, counts] = await Promise.all([
+      notion.databases.query({
+        database_id: databaseId,
+        sorts: [{ property: '日期', direction: 'ascending' }],
+      }),
+      getAllRegisteredCounts(),
+    ])
   } catch { return [] }
-
-  const counts = await getAllRegisteredCounts()
 
   return response.results.map((page: any) => {
     const date = getText(page.properties['日期'])

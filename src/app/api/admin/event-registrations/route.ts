@@ -14,11 +14,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing params' }, { status: 400 })
   }
 
-  const [allRegistrations, memberMap, { events }] = await Promise.all([
-    getAllRegistrations(),
-    getAllMembers(),
-    getEventsWithMap(),
-  ])
+  let allRegistrations, memberMap, events
+  try {
+    ;[allRegistrations, memberMap, { events }] = await Promise.all([
+      getAllRegistrations(),
+      getAllMembers(),
+      getEventsWithMap(),
+    ])
+  } catch {
+    return NextResponse.json({ error: 'Notion 讀取失敗，請稍後再試' }, { status: 503 })
+  }
 
   const idx = buildEventIndexes(events)
 
