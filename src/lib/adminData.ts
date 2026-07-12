@@ -166,6 +166,41 @@ export type MemberInfo = {
   memberType: '一般里民' | '資深里民'
 }
 
+// ── 活動歸屬共用邏輯（三重驗證：名稱＋ID＋日期）──
+// 所有「這筆報名屬於哪場活動」的判斷都必須走這裡，禁止各處自己寫比對
+
+export type EventIndexes = {
+  eventById: Map<string, EventInfo>
+  eventsByName: Map<string, EventInfo[]> // 每個名稱下的場次，由舊到新排序
+}
+
+export function buildEventIndexes(events: EventInfo[]): EventIndexes {
+  const eventById = new Map(events.map(e => [e.id, e]))
+  const eventsByName = new Map<string, EventInfo[]>()
+  for (const ev of events) {
+    const list = eventsByName.get(ev.name)
+    if (list) list.push(ev)
+    else eventsByName.set(ev.name, [ev])
+  }
+  eventsByName.forEach(list => list.sort((a, b) => a.date.localeCompare(b.date)))
+  return { eventById, eventsByName }
+}
+
+// 把一筆報名歸屬到唯一場次：
+// 1. 有活動ID且找得到 → 直接歸屬
+// 2. 否則用名稱找場次列表：單一場次直接歸屬；多場次依報名日期找最近的未來場，無報名日期歸最舊場
+export function attributeRegistration(r: Registration, idx: EventIndexes): EventInfo | undefined {
+  if (r.eventId) {
+    const ev = idx.eventById.get(r.eventId)
+    if (ev) return ev
+  }
+  const evList = idx.eventsByName.get(r.eventName)
+  if (!evList || evList.length === 0) return undefined
+  if (evList.length === 1) return evList[0]
+  const regDate = r.registrationDate?.slice(0, 10)
+  return (regDate ? evList.find(e => e.date >= regDate) : undefined) ?? evList[0]
+}
+
 // 取得所有會員身份 email → memberType
 export async function getAllMembers(): Promise<Map<string, '一般里民' | '資深里民'>> {
   const map = new Map<string, '一般里民' | '資深里民'>()
@@ -232,14 +267,21 @@ export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap
 export async function syncEventsToBrandPL(): Promise<{ created: number; skipped: number }> {
   const { events } = await getEventsWithMap()
 
-  // 取得已存在的活動ID清單
-  const existing: any = await notion.databases.query({
-    database_id: COST_TABLE_DB,
-    page_size: 100,
-    filter: { property: '類別', select: { equals: '活動' } },
-  })
+  // 取得已存在的活動ID清單（分頁讀全部，避免超過 100 筆時建立重複資料）
+  const existingResults: any[] = []
+  let cursor: string | undefined
+  do {
+    const existing: any = await notion.databases.query({
+      database_id: COST_TABLE_DB,
+      page_size: 100,
+      start_cursor: cursor,
+      filter: { property: '類別', select: { equals: '活動' } },
+    })
+    existingResults.push(...existing.results)
+    cursor = existing.has_more ? existing.next_cursor : undefined
+  } while (cursor)
   const existingEventIds = new Set(
-    (existing.results as any[])
+    existingResults
       .map((p: any) => p.properties['活動ID']?.rich_text?.[0]?.plain_text)
       .filter(Boolean)
   )
@@ -268,9 +310,9 @@ export async function syncEventsToBrandPL(): Promise<{ created: number; skipped:
 }
 
 export async function getUpcomingEvents(daysAhead: number) {
-  const target = new Date()
-  target.setDate(target.getDate() + daysAhead)
-  const dateStr = target.toISOString().slice(0, 10)
+  const target = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000)
+  // 以台灣時區取日期，避免 UTC 偏移導致提醒差一天
+  const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(target)
 
   const res: any = await notion.databases.query({
     database_id: EVENTS_DB,
@@ -295,51 +337,30 @@ export function computeStats(
 ): DashboardStats {
   const active = registrations.filter(r => r.status === '已報名')
 
-  // 依活動名稱建立事件列表（由舊到新），用於 name-fallback 的智慧分配
-  const eventsByName = new Map<string, EventInfo[]>()
-  for (const ev of events) {
-    if (!eventsByName.has(ev.name)) eventsByName.set(ev.name, [])
-    eventsByName.get(ev.name)!.push(ev)
-  }
-  Array.from(eventsByName.values()).forEach(evList => evList.sort((a: EventInfo, b: EventInfo) => a.date.localeCompare(b.date)))
-
-  // Map: 沒有 eventId 的報名 → 推斷應歸屬的 eventId
-  // 若同名只有一場活動 → 直接歸屬；若多場 → 依報名日期找最近的未來場，無日期則歸最舊場
-  const regToEventId = new Map<Registration, string>()
+  // 共用歸屬索引：每筆報名唯一歸屬到一場活動（三重驗證）
+  const idx = buildEventIndexes(events)
+  const regAttribution = new Map<Registration, EventInfo | undefined>()
   const byEventId = new Map<string, number>()
-
   for (const r of active) {
-    if (r.eventId) {
-      byEventId.set(r.eventId, (byEventId.get(r.eventId) ?? 0) + 1)
-    } else if (r.eventName) {
-      const evList = eventsByName.get(r.eventName) ?? []
-      if (evList.length === 0) continue
-      let targetEv: EventInfo
-      if (evList.length === 1) {
-        targetEv = evList[0]
-      } else {
-        const regDate = r.registrationDate?.slice(0, 10)
-        // 找報名日期之後最近的一場；無報名日期則指向最舊一場（舊資料預設屬第一場）
-        targetEv = (regDate ? evList.find(e => e.date >= regDate) : undefined) ?? evList[0]
-      }
-      byEventId.set(targetEv.id, (byEventId.get(targetEv.id) ?? 0) + 1)
-      regToEventId.set(r, targetEv.id)
-    }
+    const ev = attributeRegistration(r, idx)
+    regAttribution.set(r, ev)
+    if (ev) byEventId.set(ev.id, (byEventId.get(ev.id) ?? 0) + 1)
   }
 
-  // Cost records keyed by eventId (精準比對) 和 date (fallback)
+  // Cost records keyed by eventId (精準比對) 和 名稱+日期 (fallback)
+  // 不可只用日期比對：同一天可能有多場不同活動
   const costByEventId = new Map<string, CostRecord>()
-  const costByDate = new Map<string, CostRecord>()
+  const costByNameDate = new Map<string, CostRecord>()
   for (const c of costRecords) {
     if (c.eventId) costByEventId.set(c.eventId, c)
-    if (c.eventDate) costByDate.set(c.eventDate.slice(0, 10), c)
+    if (c.eventDate) costByNameDate.set(`${c.name}|${c.eventDate.slice(0, 10)}`, c)
   }
 
   // Achievement rate — all events as primary source
   const achievementData = events
     .map(ev => {
       const actual = byEventId.get(ev.id) ?? 0
-      const cost = costByEventId.get(ev.id) ?? costByDate.get(ev.date)
+      const cost = costByEventId.get(ev.id) ?? costByNameDate.get(`${ev.name}|${ev.date}`)
       return {
         eventId: ev.id,
         name: ev.name,
@@ -368,11 +389,9 @@ export function computeStats(
           : undefined
       }
 
-      // 找到此活動的報名人數（含 name-fallback 的智慧分配結果）
+      // 找到此活動的報名人數（用共用歸屬結果）
       const eventRegs = ev
-        ? active.filter(r => r.eventId
-            ? r.eventId === ev!.id
-            : regToEventId.get(r) === ev!.id)
+        ? active.filter(r => regAttribution.get(r)?.id === ev!.id)
         : []
       const registrationCount = eventRegs.length
 
@@ -419,13 +438,10 @@ export function computeStats(
     .map(([month, revenue]) => ({ month, revenue }))
 
   // Return rate — 以每筆報名為單位計算
-  // 用活動日期（eventId→date 或 eventName→date）當時間基準，因為舊資料報名時間為空
-  const eventIdToDate = new Map<string, string>(events.map(e => [e.id, e.date]))
-  const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
-
+  // 用歸屬活動的日期當時間基準（活動實際發生時間），因為舊資料報名時間為空
   function getEffectiveDate(r: Registration): string {
-    const effectiveId = r.eventId || regToEventId.get(r)
-    if (effectiveId && eventIdToDate.has(effectiveId)) return eventIdToDate.get(effectiveId)!
+    const ev = regAttribution.get(r)
+    if (ev) return ev.date
     if (r.registrationDate) return r.registrationDate.slice(0, 10)
     return ''
   }

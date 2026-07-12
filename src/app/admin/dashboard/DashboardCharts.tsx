@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend
@@ -24,14 +24,17 @@ type MemberHistory = { eventName: string; eventDate: string }
 
 function MemberHistoryModal({ name, email, onClose }: { name: string; email: string; onClose: () => void }) {
   const [history, setHistory] = useState<MemberHistory[] | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  if (!history && !loading) {
-    setLoading(true)
+  useEffect(() => {
+    let cancelled = false
     fetch(`/api/admin/member-history?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
-      .then(d => { setHistory(d.history ?? []); setLoading(false) })
-  }
+      .then(d => { if (!cancelled) { setHistory(d.history ?? []); setLoading(false) } })
+      .catch(() => { if (!cancelled) { setError(true); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [email])
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={onClose}>
@@ -45,6 +48,7 @@ function MemberHistoryModal({ name, email, onClose }: { name: string; email: str
         </div>
         <div className="overflow-y-auto flex-1 p-5">
           {loading && <p className="text-gray-400 text-sm text-center py-6">載入中...</p>}
+          {error && <p className="text-red-400 text-sm text-center py-6">載入失敗，請關閉後重試</p>}
           {history?.length === 0 && <p className="text-gray-400 text-sm text-center py-6">無參加紀錄</p>}
           {history && history.length > 0 && (
             <ul className="space-y-2">
@@ -77,19 +81,23 @@ function ParticipantModal({
 }) {
   const [participants, setParticipants] = useState<Participant[] | null>(null)
   const [calculatedRevenue, setCalculatedRevenue] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [memberModal, setMemberModal] = useState<{ name: string; email: string } | null>(null)
 
-  if (!participants && !loading) {
-    setLoading(true)
+  useEffect(() => {
+    let cancelled = false
     fetch(`/api/admin/event-registrations?eventId=${encodeURIComponent(eventId)}&eventDate=${encodeURIComponent(eventDate)}&eventName=${encodeURIComponent(eventName)}`)
       .then(r => r.json())
       .then(d => {
+        if (cancelled) return
         setParticipants(d.participants ?? [])
         setCalculatedRevenue(d.calculatedRevenue ?? null)
         setLoading(false)
       })
-  }
+      .catch(() => { if (!cancelled) { setError(true); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [eventId, eventDate, eventName])
 
   const returningCount = participants?.filter(p => p.isReturning).length ?? 0
   const newCount = (participants?.length ?? 0) - returningCount
@@ -154,6 +162,7 @@ function ParticipantModal({
           </div>
           <div className="overflow-y-auto flex-1 p-5">
             {loading && <p className="text-gray-400 text-sm text-center py-8">載入中...</p>}
+            {error && <p className="text-red-400 text-sm text-center py-8">載入失敗，請關閉後重試</p>}
             {participants?.length === 0 && <p className="text-gray-400 text-sm text-center py-8">尚無報名者</p>}
             {participants && participants.length > 0 && (
               <>

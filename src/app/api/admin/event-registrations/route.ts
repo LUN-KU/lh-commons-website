@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllRegistrations, getAllMembers, getEventsWithMap } from '@/lib/adminData'
+import { getAllRegistrations, getAllMembers, getEventsWithMap, buildEventIndexes, attributeRegistration } from '@/lib/adminData'
 import { isAdminCookie } from '@/lib/adminAuth'
 
 export async function GET(req: NextRequest) {
@@ -20,48 +20,27 @@ export async function GET(req: NextRequest) {
     getEventsWithMap(),
   ])
 
-  // 建立活動日期查詢表（用於 registrationDate 為空的舊資料）
-  const eventIdToDate = new Map<string, string>(events.map(e => [e.id, e.date]))
-  const eventNameToDate = new Map<string, string>(events.map(e => [e.name, e.date]))
+  const idx = buildEventIndexes(events)
 
-  function getEffectiveDate(r: { eventId: string; eventName: string; registrationDate: string }): string {
-    // 優先用活動日期（活動實際發生時間），與 member-history 一致，避免提前報名未來活動被誤判回流
-    if (r.eventId && eventIdToDate.has(r.eventId)) return eventIdToDate.get(r.eventId)!
-    if (r.eventName && eventNameToDate.has(r.eventName)) return eventNameToDate.get(r.eventName)!
-    if (r.registrationDate) return r.registrationDate.slice(0, 10)
-    return ''
-  }
-
-  // 找到本場活動的費用設定（三重驗證：ID → 日期確認 → 名稱+日期）
-  let ev = events.find(e => e.id === eventId)
+  // 找到本場活動（三重驗證：ID → 日期確認 → 名稱+日期）
+  let ev = idx.eventById.get(eventId)
   if (ev && ev.date !== eventDate) ev = events.find(e => e.name === eventName && e.date === eventDate) ?? ev
   if (!ev) ev = events.find(e => e.name === eventName && e.date === eventDate)
 
-  // 同名活動列表（由舊到新），用於推斷舊報名歸屬
-  const sameNameEvents = events.filter(e => e.name === eventName).sort((a, b) => a.date.localeCompare(b.date))
-  const isEarliestOccurrence = sameNameEvents[0]?.id === eventId
-
   const active = allRegistrations.filter(r => r.status === '已報名')
 
-  // 找出此活動的報名者：有 eventId 精準比對；無 eventId 用名字+日期推斷
-  const eventRegs = active.filter(r => {
-    if (r.eventId) return r.eventId === eventId
-    if (r.eventName !== eventName) return false
-    // 舊報名無 eventId：有報名時間則找最近的未來場，無則歸最舊場
-    const regDate = r.registrationDate?.slice(0, 10)
-    if (regDate) {
-      const attributed = sameNameEvents.find(e => e.date >= regDate) ?? sameNameEvents[sameNameEvents.length - 1]
-      return attributed?.id === eventId
-    }
-    return isEarliestOccurrence
-  })
+  // 每筆報名用共用邏輯歸屬到唯一場次
+  const attribution = new Map(active.map(r => [r, attributeRegistration(r, idx)]))
 
-  // 判斷回流：用活動日期（而非報名時間）做比較，因為舊資料報名時間為空
+  // 本場活動的報名者
+  const eventRegs = active.filter(r => attribution.get(r)?.id === eventId)
+
+  // 回流判斷：此人是否參加過「更早日期」的其他場次（含同名活動的先前場次）
   const returningEmails = new Set<string>()
   for (const r of active) {
-    const isSameEvent = r.eventId ? r.eventId === eventId : r.eventName === eventName
-    if (isSameEvent) continue
-    const date = getEffectiveDate(r)
+    const attributed = attribution.get(r)
+    if (attributed?.id === eventId) continue
+    const date = attributed?.date ?? r.registrationDate?.slice(0, 10) ?? ''
     if (date && date < eventDate) {
       returningEmails.add(r.memberEmail)
     }
