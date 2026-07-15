@@ -107,12 +107,12 @@ export default async function Home() {
 
           {/* Left: text */}
           <div>
-            <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-5">Event Record</p>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-5">活動紀錄</h2>
+            <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-5">Life With Us</p>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-5">共創時刻</h2>
             <div className="w-14 h-0.5 bg-white/30 mb-6" />
-            <p className="text-white/70 font-semibold mb-4 text-[15px]">每一次活動，都是一段珍貴的記憶</p>
+            <p className="text-white/70 font-semibold mb-4 text-[15px]">在台北最多元的活動社群，感受最真誠的實體連結</p>
             <p className="text-white/50 text-sm leading-relaxed">
-              領航里每月舉辦多場活動，從文化講座到戶外運動，每一場都有里民們歡聚的珍貴瞬間。這些紀錄代表著我們一起走過的每一步。
+              放下手機、走入人群，領航里這個充滿人情味的社群，讓你在實體互動中真誠相遇。我們透過豐富多元的活動，陪你一起嘗試未曾體驗的日常，更能找到一群頻率相同、願意陪你探索世界的夥伴。
             </p>
           </div>
 
