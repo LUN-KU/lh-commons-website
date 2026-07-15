@@ -58,7 +58,7 @@ export default async function Home() {
           {/* Right: quote + photo */}
           <div>
             <p className="text-white/55 text-sm mb-4 pl-3 border-l-2 border-white/30 leading-relaxed">
-              不只是社交，還有派對、運動、講座，等待里民們加入
+              陪你嘗試未曾體驗的日常，在笑聲與深度交流中，活出你最喜歡的模樣
             </p>
             {featuredImage ? (
               // eslint-disable-next-line @next/next/no-img-element
