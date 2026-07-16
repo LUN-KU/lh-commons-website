@@ -36,6 +36,9 @@ export type MemberPoints = {
   balance: number
   total: number
   redeemedEvents: string[]
+  memberType: string
+  status: string
+  lastMonthlyGrant: string
 }
 
 function parseRedeemed(prop: any): string[] {
@@ -58,7 +61,34 @@ export async function getMemberPointsByEmail(email: string): Promise<MemberPoint
     balance: page.properties['點數餘額']?.number ?? 0,
     total: page.properties['累積點數']?.number ?? 0,
     redeemedEvents: parseRedeemed(page.properties['已集點活動']),
+    memberType: page.properties['身份']?.select?.name ?? '一般里民',
+    status: page.properties['狀態']?.select?.name ?? '',
+    lastMonthlyGrant: page.properties['上次月點發放']?.rich_text?.map((t: any) => t.plain_text).join('') ?? '',
   }
+}
+
+const MONTHLY_SENIOR_POINTS = 5
+
+// 台灣時間的年月字串，如 2026-07
+function currentMonthTW(): string {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 7)
+}
+
+// 資深里民每月點數：僅「啟用」中的資深里民，本月未發過才發（開「我的點數」頁時觸發）
+export async function grantMonthlyPointsIfDue(member: MemberPoints): Promise<number> {
+  const month = currentMonthTW()
+  if (member.memberType !== '資深里民') return 0
+  if (member.status !== '啟用') return 0
+  if (member.lastMonthlyGrant === month) return 0
+  await notion.pages.update({
+    page_id: member.pageId,
+    properties: {
+      '點數餘額': { number: member.balance + MONTHLY_SENIOR_POINTS },
+      '累積點數': { number: member.total + MONTHLY_SENIOR_POINTS },
+      '上次月點發放': { rich_text: [{ text: { content: month } }] },
+    },
+  })
+  return MONTHLY_SENIOR_POINTS
 }
 
 // 集點：加點並記錄已集點活動（呼叫端須先確認 eventId 不在 current.redeemedEvents）

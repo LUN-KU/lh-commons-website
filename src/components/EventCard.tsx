@@ -98,6 +98,12 @@ export default function EventCard({ event, compact = false }: { event: Event; co
                 <span className="truncate">{event.location}</span>
               </div>
             )}
+            {event.redeemPoints != null && (
+              <div className="flex items-center gap-2">
+                <span className="flex-none">🪙</span>
+                <span className="text-amber-600 font-semibold">出席可集 {event.redeemPoints} 點</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

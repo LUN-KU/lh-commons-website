@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { getMemberPointsByEmail } from '@/lib/members'
+import { getMemberPointsByEmail, grantMonthlyPointsIfDue } from '@/lib/members'
 import PointsCard from '@/components/PointsCard'
 
 export const dynamic = 'force-dynamic'
@@ -21,12 +21,20 @@ export default async function MemberPage() {
 
   const points = await getMemberPointsByEmail(session.user.email)
 
+  let monthlyGranted = 0
+  if (points) {
+    try {
+      monthlyGranted = await grantMonthlyPointsIfDue(points)
+    } catch { /* 發放失敗不擋頁面，下次開頁再補發 */ }
+  }
+
   return (
     <main className="max-w-lg mx-auto px-6 py-12">
       <PointsCard
         name={session.user.name ?? '里民'}
-        balance={points?.balance ?? 0}
-        total={points?.total ?? 0}
+        balance={(points?.balance ?? 0) + monthlyGranted}
+        total={(points?.total ?? 0) + monthlyGranted}
+        monthlyGranted={monthlyGranted}
       />
     </main>
   )

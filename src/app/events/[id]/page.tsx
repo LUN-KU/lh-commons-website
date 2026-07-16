@@ -131,6 +131,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 {event.status}
               </span>
             )}
+            {event.redeemPoints != null && (
+              <span className="bg-amber-400/20 border border-amber-300/40 text-amber-200 text-sm font-semibold px-4 py-1.5 rounded-full">
+                🪙 出席可集 {event.redeemPoints} 點
+              </span>
+            )}
           </div>
 
           {/* Title */}

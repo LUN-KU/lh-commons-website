@@ -22,6 +22,15 @@ export type Event = {
   memberOnly: boolean
   targetCount: number | null
   registeredCount: number
+  redeemPoints: number | null
+}
+
+// 有設集點密碼的活動才給點：回傳該場點數（未填「集點點數」預設 5），沒設密碼回傳 null
+function getRedeemPoints(page: any): number | null {
+  const code = getText(page.properties['集點密碼']).trim()
+  if (!code) return null
+  const pts = page.properties['集點點數']?.number
+  return typeof pts === 'number' && pts > 0 ? pts : 5
 }
 
 // 統計所有活動的已報名人數（單次查詢，依 活動ID 分組）
@@ -159,6 +168,7 @@ export async function getEvents(): Promise<Event[]> {
       memberOnly: page.properties['會員限定']?.checkbox ?? false,
       targetCount,
       registeredCount,
+      redeemPoints: getRedeemPoints(page),
     }
   })
 }
@@ -307,7 +317,7 @@ export type RedeemEvent = {
   expired: boolean
 }
 
-// 用集點密碼反查活動：活動 DB 需有「集點密碼」「集點截止」（選填「集點點數」，預設 10）
+// 用集點密碼反查活動：活動 DB 需有「集點密碼」「集點截止」（選填「集點點數」，預設 5）
 export async function findEventByRedeemCode(code: string): Promise<RedeemEvent | null> {
   let res
   try {
@@ -326,7 +336,7 @@ export async function findEventByRedeemCode(code: string): Promise<RedeemEvent |
   return {
     id: page.id,
     name: getText(page.properties['活動名稱']),
-    points: typeof pts === 'number' && pts > 0 ? pts : 10,
+    points: typeof pts === 'number' && pts > 0 ? pts : 5,
     expired,
   }
 }
@@ -357,6 +367,7 @@ export async function getEvent(id: string): Promise<Event | null> {
       memberOnly: page.properties['會員限定']?.checkbox ?? false,
       targetCount,
       registeredCount,
+      redeemPoints: getRedeemPoints(page),
     }
   } catch {
     return null
