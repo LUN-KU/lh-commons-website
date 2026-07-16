@@ -318,18 +318,21 @@ export type RedeemEvent = {
 }
 
 // 用集點密碼反查活動：活動 DB 需有「集點密碼」「集點截止」（選填「集點點數」，預設 5）
+// 比對不分大小寫：撈出所有有密碼的活動後在程式端比對，Notion 裡大小寫隨意填
 export async function findEventByRedeemCode(code: string): Promise<RedeemEvent | null> {
   let res
   try {
     res = await notion.databases.query({
       database_id: databaseId,
-      filter: { property: '集點密碼', rich_text: { equals: code } },
+      filter: { property: '集點密碼', rich_text: { is_not_empty: true } },
     })
   } catch {
     return null
   }
-  if (!res.results.length) return null
-  const page = res.results[0] as any
+  const page = (res.results as any[]).find(
+    p => getText(p.properties['集點密碼']).trim().toUpperCase() === code.trim().toUpperCase()
+  )
+  if (!page) return null
   const deadline = page.properties['集點截止']?.date?.start ?? null
   const expired = deadline ? Date.now() > Date.parse(deadline) : false
   const pts = page.properties['集點點數']?.number
