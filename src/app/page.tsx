@@ -57,7 +57,7 @@ export default async function Home() {
 
           {/* Right: quote + photo */}
           <div>
-            <p className="text-white/55 text-sm mb-4 pl-3 border-l-2 border-white/30 leading-relaxed">
+            <p className="text-white font-medium text-base mb-4 pl-4 border-l-[3px] border-white/50 leading-relaxed [text-shadow:0_1px_3px_rgba(0,0,0,0.28)]">
               陪你嘗試未曾體驗的日常，在笑聲與深度交流中，活出你最喜歡的模樣
             </p>
             {featuredImage ? (
