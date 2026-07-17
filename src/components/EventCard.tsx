@@ -23,6 +23,13 @@ export default function EventCard({ event, compact = false }: { event: Event; co
   const displayImage = event.coverImage || event.iconImage
 
   if (compact) {
+    // 首頁小卡副標：日期時間 ｜ 亮點（未填亮點時退回類別 · 地點）
+    const dateLine = event.date
+      ? `📅 ${formatDate(event.date)}${event.time ? ` ${event.time}` : ''}`
+      : ''
+    const detail = event.highlight || [event.category, event.location].filter(Boolean).join(' · ')
+    const subtitle = [dateLine, detail].filter(Boolean).join(' ｜ ')
+
     return (
       <Link href={`/events/${event.id}`}>
         <div className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all group h-full flex flex-col">
@@ -41,6 +48,9 @@ export default function EventCard({ event, compact = false }: { event: Event; co
           </div>
           <div className="p-3">
             <h3 className="font-bold text-brand-900 text-sm leading-snug line-clamp-2">{event.name}</h3>
+            {subtitle && (
+              <p className="mt-1.5 text-xs text-gray-400 leading-relaxed line-clamp-2">{subtitle}</p>
+            )}
           </div>
         </div>
       </Link>

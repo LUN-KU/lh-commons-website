@@ -23,6 +23,7 @@ export type Event = {
   targetCount: number | null
   registeredCount: number
   redeemPoints: number | null
+  highlight: string
 }
 
 // 有設集點密碼的活動才給點：回傳該場點數（未填「集點點數」預設 5），沒設密碼回傳 null
@@ -169,6 +170,7 @@ export async function getEvents(): Promise<Event[]> {
       targetCount,
       registeredCount,
       redeemPoints: getRedeemPoints(page),
+      highlight: getText(page.properties['亮點']),
     }
   })
 }
@@ -371,6 +373,7 @@ export async function getEvent(id: string): Promise<Event | null> {
       targetCount,
       registeredCount,
       redeemPoints: getRedeemPoints(page),
+      highlight: getText(page.properties['亮點']),
     }
   } catch {
     return null

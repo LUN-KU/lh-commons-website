@@ -86,9 +86,10 @@ export default async function Home() {
           </div>
           <Link
             href="/events"
-            className="text-sm font-medium text-white/60 hover:text-white border border-white/20 px-4 py-1.5 rounded-full hover:border-white/50 transition-colors"
+            className="group flex-none inline-flex items-center gap-1.5 text-sm font-bold text-white bg-white/15 hover:bg-white/25 border-2 border-white/50 hover:border-white/80 px-5 py-2 rounded-full transition-colors"
           >
-            查看全部 →
+            查看全部
+            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
           </Link>
         </div>
         {upcoming.length === 0 ? (
