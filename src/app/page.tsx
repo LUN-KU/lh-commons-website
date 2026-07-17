@@ -49,9 +49,10 @@ export default async function Home() {
             )}
             <Link
               href="/links"
-              className="mt-8 inline-block border border-white/30 text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors"
+              className="group mt-8 inline-flex items-center gap-2 bg-white text-brand-700 text-[15px] font-bold px-7 py-3 rounded-full shadow-lg shadow-brand-900/25 hover:shadow-xl hover:shadow-brand-900/35 hover:-translate-y-0.5 transition-all duration-200"
             >
-              一鍵入籍領航里 →
+              一鍵入籍領航里
+              <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </Link>
           </div>
 
