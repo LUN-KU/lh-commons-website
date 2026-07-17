@@ -31,6 +31,34 @@ function RichText({ arr }: { arr: any[] }) {
   )
 }
 
+// 把數字（300+、800+）highlight 成亮黃色，讓實績一秒跳出來
+function highlightNumbers(line: string) {
+  return line.split(/(\d+\+?)/g).map((part, i) =>
+    /^\d+\+?$/.test(part)
+      ? <span key={i} className="text-amber-300 font-black">{part}</span>
+      : <span key={i}>{part}</span>
+  )
+}
+
+// 首頁 hero：第一行為定位標籤（小字），其後為實績數據（大字＋數字highlight）
+function HeroText({ text }: { text: string }) {
+  const lines = text.split('\n')
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span
+          key={i}
+          className={i === 0
+            ? 'block text-white/70 font-semibold text-sm tracking-wide mb-2'
+            : 'block text-white font-bold text-lg leading-relaxed'}
+        >
+          {i === 0 ? line : highlightNumbers(line)}
+        </span>
+      ))}
+    </>
+  )
+}
+
 // 偵測是否以 emoji 開頭（作為區塊標題行）
 function startsWithEmoji(text: string): boolean {
   const cp = text.trim().codePointAt(0)
@@ -131,6 +159,8 @@ export default function NotionBlocks({ blocks, dark = false }: { blocks: NotionB
               <p className={c.cardText}><RichText arr={block.paragraph?.rich_text} /></p>
             </div>
           )
+        } else if (dark && text.includes('\n')) {
+          elements.push(<p key={block.id}><HeroText text={text} /></p>)
         } else {
           elements.push(
             <p key={block.id} className={c.text}>
