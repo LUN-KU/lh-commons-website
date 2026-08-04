@@ -88,14 +88,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <span className="text-sm">{event.location}</span>
               </div>
             )}
-            {!!event.targetCount && (
-              <div className="flex gap-3 items-start text-brand-600">
-                <span className="flex-none w-5 text-center">👥</span>
-                <span className="text-sm">
-                  已報名 {event.registeredCount} / {event.targetCount} 人
-                </span>
-              </div>
-            )}
           </div>
 
           {/* CTA button */}
