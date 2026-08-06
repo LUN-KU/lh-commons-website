@@ -127,7 +127,7 @@ export async function sendApprovalEmail(params: {
 }
 
 export async function sendLoginCodeEmail(email: string, code: string) {
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: FROM,
     to: email,
     subject: `【領航里】登入驗證碼：${code}`,
@@ -142,4 +142,7 @@ export async function sendLoginCodeEmail(email: string, code: string) {
       </div>
     `,
   })
+  // Resend 被拒絕時不會 throw，只在回傳帶 error；必須主動檢查並拋出，
+  // 否則上層會誤以為寄送成功，回報「已寄出」給使用者
+  if (error) throw new Error(`RESEND_${error.name ?? 'ERROR'}: ${error.message ?? ''}`)
 }

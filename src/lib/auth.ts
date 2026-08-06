@@ -1,8 +1,11 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { getMemberByEmail } from './members'
-import { verifyLoginCode } from './adminAuth'
 
+// ⚠️ 臨時方案（2026-08-06）：Resend 尚無已驗證網域，驗證碼信寄不出去，
+// 故暫時改回「只輸入 Email」登入。待綁定自有網域後，把驗證碼步驟加回：
+// 1) credentials 加回 code 欄位並用 verifyLoginCode 檢查（見 git 或 login-code route）
+// 2) LoginButton 改回兩步驟（寄碼 → 輸碼）
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -10,12 +13,10 @@ export const authOptions: NextAuthOptions = {
       name: 'Email',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        code: { label: '驗證碼', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.code) return null
+        if (!credentials?.email) return null
         const email = credentials.email.trim()
-        if (!verifyLoginCode(email, credentials.code.trim())) throw new Error('CODE')
 
         let member
         try {
