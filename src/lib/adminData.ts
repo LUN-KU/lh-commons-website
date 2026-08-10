@@ -159,6 +159,7 @@ export type EventInfo = {
   feeGeneral: number   // 一般里民費用
   feeSenior: number    // 資深里民費用
   feeEarly: number     // 早鳥里民費用
+  targetCount: number  // 目標人數（活動資料庫）
 }
 
 export type MemberInfo = {
@@ -252,6 +253,7 @@ export async function getEventsWithMap(): Promise<{ events: EventInfo[]; dateMap
           feeGeneral: feeGeneral > 0 ? feeGeneral : feeDesc,
           feeSenior: feeSenior > 0 ? feeSenior : feeDesc,
           feeEarly,
+          targetCount: (p['目標人數']?.number as number) ?? 0,
         }
         events.push(ev)
         dateMap.set(date, ev)
@@ -356,18 +358,19 @@ export function computeStats(
     if (c.eventDate) costByNameDate.set(`${c.name}|${c.eventDate.slice(0, 10)}`, c)
   }
 
-  // Achievement rate — all events as primary source
+  // Achievement rate — 目標人數優先取活動資料庫，損益表當備援
   const achievementData = events
     .map(ev => {
       const actual = byEventId.get(ev.id) ?? 0
       const cost = costByEventId.get(ev.id) ?? costByNameDate.get(`${ev.name}|${ev.date}`)
+      const target = ev.targetCount > 0 ? ev.targetCount : (cost?.targetCount ?? 0)
       return {
         eventId: ev.id,
         name: ev.name,
         date: ev.date,
-        target: cost?.targetCount ?? 0,
+        target,
         actual,
-        rate: cost?.targetCount ? Math.round((actual / cost.targetCount) * 100) : null,
+        rate: target > 0 ? Math.round((actual / target) * 100) : null,
         matched: true,
         hasCost: !!cost,
       }
