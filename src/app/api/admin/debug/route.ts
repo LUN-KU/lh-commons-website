@@ -1,20 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getCostRecords } from '@/lib/adminData'
+import { NextResponse } from 'next/server'
+import { getCostRecords, getEventsWithMap } from '@/lib/adminData'
 
-export async function GET(req: NextRequest) {
-  const cookie = req.cookies.get('lh_admin')?.value
-  if (!cookie || cookie !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function GET() {
+  const [costRecords, { events }] = await Promise.all([getCostRecords(), getEventsWithMap()])
 
-  const costRecords = await getCostRecords()
+  const augEvents = events.filter(e => e.date.startsWith('2026-08'))
+  const augCosts = costRecords.filter(c => c.eventDate?.startsWith('2026-08'))
+
   return NextResponse.json({
-    total: costRecords.length,
-    records: costRecords.map(c => ({
-      name: c.name,
-      category: c.category,
-      date: c.eventDate,
-      revenue: c.totalRevenue,
+    augEvents: augEvents.map(e => ({ id: e.id, name: e.name, date: e.date })),
+    augCosts: augCosts.map(c => ({
+      name: c.name, date: c.eventDate, eventId: c.eventId,
+      targetCount: c.targetCount, cost: c.totalCost, revenue: c.totalRevenue,
     })),
   })
 }
