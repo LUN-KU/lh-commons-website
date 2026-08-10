@@ -406,10 +406,12 @@ export default function DashboardCharts({ stats }: { stats: DashboardStats }) {
                       <span className="text-gray-400 text-sm"> / {ev.target} 人</span>
                     )}
                   </div>
-                  {ev.rate !== null && (
+                  {ev.rate !== null ? (
                     <span className={`text-sm font-semibold ${ev.rate >= 100 ? 'text-green-600' : ev.rate >= 70 ? 'text-brand-600' : 'text-orange-500'}`}>
                       {ev.rate}%
                     </span>
+                  ) : (
+                    <span className="text-xs text-gray-300">未設目標</span>
                   )}
                 </div>
                 {ev.target > 0 && (
