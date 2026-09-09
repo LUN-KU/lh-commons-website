@@ -5,38 +5,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
 body {
-  background-color: #5179A5;
+  background-color: #4A78B0;
   background-image:
-    /* 霧感暖白光：讓整體有柔焦感 */
+    /* 霧感白光：讓整體有柔焦感 */
     radial-gradient(ellipse 200% 150% at 40% 30%,
-      rgba(255, 250, 241, 0.20) 0%,
+      rgba(255, 255, 255, 0.18) 0%,
       transparent 55%
     ),
-    /* 左上暖奶油光暈（強） */
+    /* 左上白藍光暈（強） */
     radial-gradient(ellipse 160% 110% at 20% -10%,
-      rgba(248, 241, 227, 0.94) 0%,
-      rgba(214, 201, 174, 0.58) 30%,
-      transparent 54%
+      rgba(215, 232, 248, 0.95) 0%,
+      rgba(155, 192, 228, 0.60) 28%,
+      transparent 52%
     ),
-    /* 右下暖金（強、範圍略擴） */
-    radial-gradient(ellipse 140% 108% at 90% 115%,
-      rgba(224, 174, 52, 0.90) 0%,
-      rgba(196, 140, 44, 0.56) 38%,
-      transparent 62%
+    /* 右下暖金（強） */
+    radial-gradient(ellipse 130% 100% at 90% 115%,
+      rgba(218, 168, 38, 0.88) 0%,
+      rgba(188, 132, 38, 0.52) 35%,
+      transparent 58%
     ),
     /* 底部橫向暖帶 */
-    radial-gradient(ellipse 155% 55% at 50% 108%,
-      rgba(206, 158, 54, 0.58) 0%,
-      transparent 56%
-    ),
-    /* 全域淡暖膜：讓整體罩上一層溫度 */
-    radial-gradient(ellipse 180% 120% at 60% 55%,
-      rgba(228, 198, 148, 0.15) 0%,
-      transparent 60%
+    radial-gradient(ellipse 150% 50% at 50% 108%,
+      rgba(198, 150, 48, 0.55) 0%,
+      transparent 55%
     ),
     /* 左下深藍暗角 */
     radial-gradient(ellipse 75% 65% at -5% 100%,
-      rgba(26, 50, 108, 0.50) 0%,
+      rgba(20, 45, 110, 0.55) 0%,
       transparent 50%
     );
   background-attachment: fixed;
